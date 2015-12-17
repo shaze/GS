@@ -1,0 +1,33 @@
+definitions: sagalactiae.txt
+757 profiles
+sourced from: http://pubmlst.org/data/profiles/sagalactiae.txt
+
+locus adhP
+adhP.tfa
+Sourced from http://pubmlst.org/data/alleles/sagalactiae/adhP.tfa
+
+locus pheS
+pheS.tfa
+Sourced from http://pubmlst.org/data/alleles/sagalactiae/pheS.tfa
+
+locus atr
+atr.tfa
+Sourced from http://pubmlst.org/data/alleles/sagalactiae/atr.tfa
+
+locus glnA
+glnA.tfa
+Sourced from http://pubmlst.org/data/alleles/sagalactiae/glnA.tfa
+
+locus sdhA
+sdhA.tfa
+Sourced from http://pubmlst.org/data/alleles/sagalactiae/sdhA.tfa
+
+locus glcK
+glcK.tfa
+Sourced from http://pubmlst.org/data/alleles/sagalactiae/glcK.tfa
+
+locus tkt
+tkt.tfa
+Sourced from http://pubmlst.org/data/alleles/sagalactiae/tkt.tfa
+
+all loci: Streptococcus_agalactiae.fasta
