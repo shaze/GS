@@ -57,7 +57,7 @@ sub checkOptions {
             print "The PBP reference database sequence: $PBP_DB\n";
         } else {
             print "The PBP reference sequence location is not in the correct format or doesn't exist.\n";
-            print "Make sure you provide the full path (/root/path/fastq_file).\n";
+            print "Make sure you provide the full path (/root/path/reference_DB).\n";
             help();
         }
     } else {
@@ -136,7 +136,7 @@ sub PBP_blastTyper {
     my $GBS_db_path = dirname($PBP_DB);
     my $GBS_blastDB_name = "Blast_bLactam_".$pbp_type."_prot_DB";
     my $GBS_blast_seq = "GBS_bLactam_".$pbp_type."-DB.faa";
-    my $GBS_blast_out = "TEMP_".$outName."_blast-out_".$pbp_type."txt";
+    my $GBS_blast_out = "TEMP_".$outName."_blast-out_".$pbp_type.".txt";
     print "Blast DB name: $GBS_db_path/$GBS_blastDB_name\n";
     if (!(glob("$GBS_db_path/$GBS_blastDB_name*"))) {
 	print "Need to make a new Blast database\n";
@@ -153,6 +153,7 @@ sub PBP_blastTyper {
     my $best_name = $bestArray[1];
     my $best_len = $bestArray[3];
     my $best_iden = $bestArray[2];
+    my $frag_length = $best_len / $query_length;
 
     print "name of best hit in the PBP database: $bestArray[1]\n";
     print "identity of best hit in the PBP database: $bestArray[2]\n";
@@ -161,8 +162,9 @@ sub PBP_blastTyper {
     if ($best_iden == 100 && $best_len == $query_length) {
 	print "Found a match\n\n";
 	($pbp_out = $best_name) =~ s/^([0-9]+)\|\|.*/$1/g;
-    } else {
-	if (-s "TEMP_query_sequence.fna") {
+    } elsif (-s $GBS_blast_out && $best_iden >= 50 && $frag_length >= 0.50) {
+    #} else {
+	#if (-s "TEMP_query_sequence.fna") {
 	    print "Didn't find match.  The sequence needs to be added to the database using 'bLactam-PBP_Updater.sh'\n\n";
 	    $pbp_out = "NEW";
 	    my $new_PBPseq = "PBP_".$pbp_type."_query_sequence.faa";
@@ -171,10 +173,10 @@ sub PBP_blastTyper {
 	    open(my $f_new,'>>',"TEMP_newPBP_allele_info.txt") or die "Could not open file 'TEMP_newPBP_allele_info.txt' $!";
 	    print $f_new "$outName\t$fragPath\t$pbp_type\n";
 	    close $f_new;
-	} else {
-	    $pbp_out = "ERROR";
-	}
+    } else {
+        $pbp_out = "ERROR";
     }
+    #}
 return $pbp_out;
 }
 

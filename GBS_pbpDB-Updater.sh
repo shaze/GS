@@ -44,36 +44,42 @@ fi
 if [[ -z "$update_PBP" ]]
 then
     echo "A file containing the new PBP sequence info hasn't been given."
+    exit 1
 else
     if [[ -e "$update_PBP" ]]
     then
         update_PBP="${update_PBP}"
     else
         echo "The file containing the new PBP sequence info doesn't exist."
+	exit 1
     fi
 fi
 
 if [[ -z "$table_out" ]]
 then
     echo "The argument giving the filename of the TABLE formatted typing output hasn't been given."
+    exit 1
 else
     if [[ -e "$table_out" ]]
     then
         table_out="${table_out}"
     else
         echo "The argument giving the filename of the TABLE formatted typing output doesn't exist."
+	exit 1
     fi
 fi
 
 if [[ -z "$sample_out" ]]
 then
-    echo "The argument giving the filename of the TABLE formatted typing output hasn't been given."
+    echo "The argument giving the filename of the SAMPLE formatted typing output hasn't been given."
+    exit 1
 else
     if [[ -e "$sample_out" ]]
     then
         sample_out="${sample_out}"
     else
-        echo "The argument giving the filename of the TABLE formatted typing output doesn't exist."
+        echo "The argument giving the filename of the SAMPLE formatted typing output doesn't exist."
+	exit 1
     fi
 fi
 
@@ -133,6 +139,7 @@ blastTyper () {
         if [[ $(echo "$blastIden == 100" | bc) -eq 1 && $(echo "$blastLen == $geneLen" | bc) -eq 1 ]]
         then
             pbpAlleleID=$(echo "$blastName" | sed 's/^\([0-9]\+\)||.*/\1/g')
+	    echo "Found match in database. Sequence match is $pbpAlleleID."
         else
             echo "Didn't find match.  Will add sequence to database."
             ###Modify header (including adding number ID)###

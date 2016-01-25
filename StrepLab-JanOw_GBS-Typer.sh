@@ -1,6 +1,8 @@
 #!/bin/bash -l
 
 #export PATH=/scicomp/home/ycm6/TEMP_GBS-Typing:$PATH
+temp_path=$(pwd)
+export PATH=$PATH:$temp_path
 
 ## -- begin embedded SGE options --
 read -a PARAM <<< $(/bin/sed -n ${SGE_TASK_ID}p $1/job-control.txt)
@@ -48,22 +50,23 @@ out_namePROT=PROT_"$just_name"
 ###Call MLST###
 mod-srst2.py --mlst_delimiter '_' --input_pe "$readPair_1" "$readPair_2" --output "$out_nameMLST" --save_scores --mlst_db "$allDB_dir/Streptococcus_agalactiae.fasta" --mlst_definitions "$allDB_dir/sagalactiae.txt"
 ###Check and extract new MLST alleles###
-/scicomp/home/ycm6/TEMP_GBS-Typing/MLST_allele_checkr.pl "$out_nameMLST"__mlst__Streptococcus_agalactiae__results.txt "$out_nameMLST"__*.Streptococcus_agalactiae.sorted.bam "$allDB_dir/Streptococcus_agalactiae.fasta"
+MLST_allele_checkr.pl "$out_nameMLST"__mlst__Streptococcus_agalactiae__results.txt "$out_nameMLST"__*.Streptococcus_agalactiae.sorted.bam "$allDB_dir/Streptococcus_agalactiae.fasta"
 
 ###Call GBS Serotype###
-/scicomp/home/ycm6/TEMP_GBS-Typing/GBS_serotyper.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir/GBS_seroT_Gene-DB_Final.fasta" -n "$out_nameSERO"
+GBS_serotyper.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir/GBS_seroT_Gene-DB_Final.fasta" -n "$out_nameSERO"
 
 ###Call GBS bLactam Resistances###
-/scicomp/home/ycm6/TEMP_GBS-Typing/GBS_PBP-Gene_Typer.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir/GBS_bLactam_Ref.fasta" -n "$out_namePBP"
+GBS_PBP-Gene_Typer.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir/GBS_bLactam_Ref.fasta" -n "$out_namePBP"
 
 ###Call GBS Misc. Resistances###
-/scicomp/home/ycm6/TEMP_GBS-Typing/GBS_miscRes_Typer.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir" -m GBS_miscR_Gene-DB_Final.fasta -v GBS_vancR_Gene-DB_Final.fasta -n "$out_nameMISC"
+GBS_miscRes_Typer.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir" -m GBS_miscR_Gene-DB_Final.fasta -v GBS_vancR_Gene-DB_Final.fasta -n "$out_nameMISC"
 
 ###Type Surface adn Secretory Proteins###
-/scicomp/home/ycm6/TEMP_GBS-Typing/GBS_surface-secretory_Typer.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir" -p GBS_protein_Gene-DB_Final.fasta -n "$out_namePROT"
+GBS_surface-secretory_Typer.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir" -p GBS_protein_Gene-DB_Final.fasta -n "$out_namePROT"
 
 #Add in perl script to find contamination threshold here
 contamination_level=10
+
 
 
 
@@ -136,21 +139,31 @@ done < "$out_nameMLST"__mlst__Streptococcus_agalactiae__results.txt
 
 ###PBP_ID OUTPUT###
 printf "\tPBP_ID Code:\n" >> "$sampl_out"
-count=0
-while read -r line
-do
-    count=$(( $count + 1 ))
-    #justPBPs=$(echo "$line" | cut -f2-4)
-    justPBPs=$(echo "$line" | awk -F"\t" '{print $2}')
-    if [[ "$count" -eq 1 ]]
-    then
-        printf "\t\t$justPBPs\n" >> "$sampl_out"
-        #printf "$justPBPs\t" >> TEMP_table_title.txt
-    else
-        printf "\t\t$justPBPs\n" >> "$sampl_out"
-        printf "$justPBPs\t" >> TEMP_table_results.txt
-    fi
-done < TEMP_pbpID_Results.txt
+lineNum=$(cat TEMP_pbpID_Results.txt | wc -l)
+if [[ "$lineNum" -eq 1 ]]
+then
+    #if the file only contains the header line then no misc. resistance were found
+    firstLine=$(head -n1 TEMP_miscR_Results.txt)
+    printf "\t\t$firstLine\n\t\tNo_PBP_Type\n" >> "$sampl_out"
+    #printf "$firstLine\t" >> TEMP_table_title.txt
+    printf "No_PBP_Type\t" >> TEMP_table_results.txt
+else
+    count=0
+    while read -r line
+    do
+	count=$(( $count + 1 ))
+        #justPBPs=$(echo "$line" | cut -f2-4)
+	justPBPs=$(echo "$line" | awk -F"\t" '{print $2}')
+	if [[ "$count" -eq 1 ]]
+	then
+            printf "\t\t$justPBPs\n" >> "$sampl_out"
+            #printf "$justPBPs\t" >> TEMP_table_title.txt
+	else
+            printf "\t\t$justPBPs\n" >> "$sampl_out"
+            printf "$justPBPs\t" >> TEMP_table_results.txt
+	fi
+    done < TEMP_pbpID_Results.txt
+fi
 
 ###MISC. RESISTANCE###
 printf "\tMisc. Resistance:\n" >> "$sampl_out"
