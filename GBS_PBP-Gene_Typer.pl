@@ -228,15 +228,16 @@ sub fasta_seq_length {
 
 ###Start Doing Stuff###
 print "\n";
-chdir "$outDir";
+#chdir "$outDir";
 ##my $PBP_output = "PBP_".$outName."_Results.txt";
 my $PBP_output = "TEMP_pbpID_Results.txt";
 open(my $fh,'>',$PBP_output) or die "Could not open file '$PBP_output' $!";
 ##print $fh "Sample_Name\tPBP_1A\tPBP_2X\tPBP_Code\n";
 print $fh "Sample_Name\tPBP_Code(1A:2X)\n";
 
-system("perl ~/TEMP_GBS-Typing/LoTrac_target.pl -1 $fastq1 -2 $fastq2 -q $PBP_DB -S 2.2M -f -n $outName");
+system("LoTrac_target.pl -1 $fastq1 -2 $fastq2 -q $PBP_DB -S 2.2M -f -n $outName -o $outDir");
 
+chdir "$outDir";
 my $pbp_1A = glob("EXTRACT_*1A*.fasta");
 my $pbp1A_fragName = `cat $pbp_1A | grep ">" | tail -n1 | sed 's/>//g'`;
 my $pbp_2X = glob("EXTRACT_*2X*.fasta");

@@ -18,6 +18,7 @@ module load samtools/0.1.18
 module load bowtie2/2.1.0
 module load freebayes/0.9.21
 module load prodigal/2.60
+module load srst2/0.1.7
 
 ###This script is called for each job in the qsub array. The purpose of this code is to read in and parse a line of the job-control.txt file
 ###created by 'StrepLab-JanOw_GBS-wrapr.sh' and pass that information, as arguments, to other programs responsible for various parts of strain
@@ -46,9 +47,13 @@ out_nameSERO=SERO_"$just_name"
 out_nameMISC=MISC_"$just_name"
 out_namePBP=PBP_"$just_name"
 out_namePROT=PROT_"$just_name"
+out_nameARG=ARG_"$just_name"
+out_nameRES=RES_"$just_name"
+out_namePLAS=PLAS_"$just_name"
 
 ###Call MLST###
-mod-srst2.py --mlst_delimiter '_' --input_pe "$readPair_1" "$readPair_2" --output "$out_nameMLST" --save_scores --mlst_db "$allDB_dir/Streptococcus_agalactiae.fasta" --mlst_definitions "$allDB_dir/sagalactiae.txt"
+#mod-srst2.py --mlst_delimiter '_' --input_pe "$readPair_1" "$readPair_2" --output "$out_nameMLST" --save_scores --mlst_db "$allDB_dir/Streptococcus_agalactiae.fasta" --mlst_definitions "$allDB_dir/sagalactiae.txt"
+srst2 --samtools_args "\-A" --mlst_delimiter '_' --input_pe "$readPair_1" "$readPair_2" --output "$out_nameMLST" --save_scores --mlst_db "$allDB_dir/Streptococcus_agalactiae.fasta" --mlst_definitions "$allDB_dir/sagalactiae.txt" --min_coverage 99.999
 ###Check and extract new MLST alleles###
 MLST_allele_checkr.pl "$out_nameMLST"__mlst__Streptococcus_agalactiae__results.txt "$out_nameMLST"__*.Streptococcus_agalactiae.sorted.bam "$allDB_dir/Streptococcus_agalactiae.fasta"
 
@@ -64,6 +69,15 @@ GBS_miscRes_Typer.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir" -m GBS_mi
 ###Type Surface adn Secretory Proteins###
 GBS_surface-secretory_Typer.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir" -p GBS_protein_Gene-DB_Final.fasta -n "$out_namePROT"
 
+###Type ARG-ANNOT Resistance Genes###
+srst2 --samtools_args '\\-A' --input_pe "$readPair_1" "$readPair_2" --output "out_nameARG" --log --save_scores --min_coverage 70 --max_divergence 30 --gene_db "$allDB_dir/ARGannot_r1.fasta"
+
+###Type ResFinder Resistance Gene###
+srst2 --samtools_args '\\-A' --input_pe "$readPair_1" "$readPair_2" --output "out_nameRES" --log --save_scores --min_coverage 70 --max_divergence 30 --gene_db "$allDB_dir/ResFinder.fasta"
+
+###Type PlasmidFinder Resistance Gene###
+srst2 --samtools_args '\\-A' --input_pe "$readPair_1" "$readPair_2" --output "out_namePLAS" --log --save_scores --min_coverage 70 --max_divergence 30 --gene_db "$allDB_dir/PlasmidFinder.fasta"
+
 #Add in perl script to find contamination threshold here
 contamination_level=10
 
@@ -72,10 +86,12 @@ contamination_level=10
 
 
 ###Output the emm type/MLST/drug resistance data for this sample to it's results output file###
-sampl_out="TEMP_GBS_Typing_Results.txt"
+tabl_out="TABLE_Isolate_Typing_results.txt"
+sampl_out="SAMPLE_Isolate__Typing_Results.txt"
+extract_arr=(PARCGBS-1 GYRAGBS-1 23SWT-1 23SWT-3 RPLDGBS-1 RPLDGBS-2 RPLVGBS-1 RPLVGBS-2 RPOBgbs-1 RPOBgbs-2 RPOBgbs-3 RPOBgbs-4)
 
 printf "$just_name\n" >> "$sampl_out"
-printf "$just_name\t" >> TEMP_table_results.txt
+printf "$just_name\t" >> "$tabl_out"
 ###SEROTYPE OUTPUT###
 printf "\tSerotype:\n" >> "$sampl_out"
 lineNum=$(cat TEMP_SeroType_Results.txt | wc -l)
@@ -84,7 +100,7 @@ then
     #if the file only contains the header line then no serotype was found
     firstLine=$(head -n1 TEMP_SeroType_Results.txt)
     printf "\t\t$firstLine\n\t\tNo_Serotype\n" >> "$sampl_out"
-    printf "No_Serotype" >> TEMP_table_results.txt
+    printf "No_Serotype" >> "$tabl_out"
 else
     count=0
     misc_target=()
@@ -105,21 +121,22 @@ else
             if [[ $(echo "$justDepth > $contamination_level" | bc) -eq 1 ]]
             then
 		echo "Target $justTarget is a match"
-		misc_target+=("$justTarget($justDepth|$justMatchType)")
+		#misc_target+=("$justTarget($justDepth|$justMatchType)")
 		#printf "$justTarget;" >> TEMP_table_results.txt
+		misc_target+=("$justTarget")
 	    fi
         fi
     done < TEMP_SeroType_Results.txt
     #if the output array 'misc_target' is not empty, print out the sorted types to the 'TEMP_table_results.txt' file
     if [ ${#misc_target[@]} -eq 0 ];
     then
-        printf "No_Serotype" >> TEMP_table_results.txt
+        printf "No_Serotype" >> "$tabl_out"
     else
-        printf '%s\n' "${misc_target[@]}" | sort | tr '\n' ';'
-        printf '%s\n' "${misc_target[@]}" | sort | tr '\n' ';' >> TEMP_table_results.txt
+        printf '%s\n' "${misc_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g'
+        printf '%s\n' "${misc_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g' >> "$tabl_out"
     fi
 fi
-printf "\t" >> TEMP_table_results.txt
+printf "\t" >> "$tabl_out"
 
 ###MLST OUTPUT###
 printf "\tMLST:\n" >> "$sampl_out"
@@ -133,7 +150,7 @@ do
     else
         printf "\t\t$line\n" >> "$sampl_out"
         MLST_tabl=$(echo "$line" | cut -f2-9)
-        printf "$MLST_tabl\t" >> TEMP_table_results.txt
+        printf "$MLST_tabl\t" >> "$tabl_out"
     fi
 done < "$out_nameMLST"__mlst__Streptococcus_agalactiae__results.txt
 
@@ -142,11 +159,11 @@ printf "\tPBP_ID Code:\n" >> "$sampl_out"
 lineNum=$(cat TEMP_pbpID_Results.txt | wc -l)
 if [[ "$lineNum" -eq 1 ]]
 then
-    #if the file only contains the header line then no misc. resistance were found
-    firstLine=$(head -n1 TEMP_miscR_Results.txt)
+    #if the file only contains the header line then no PBP results were found
+    firstLine=$(head -n1 TEMP_pbpID_Results.txt)
     printf "\t\t$firstLine\n\t\tNo_PBP_Type\n" >> "$sampl_out"
     #printf "$firstLine\t" >> TEMP_table_title.txt
-    printf "No_PBP_Type\t" >> TEMP_table_results.txt
+    printf "No_PBP_Type\t" >> "$tabl_out"
 else
     count=0
     while read -r line
@@ -160,21 +177,22 @@ else
             #printf "$justPBPs\t" >> TEMP_table_title.txt
 	else
             printf "\t\t$justPBPs\n" >> "$sampl_out"
-            printf "$justPBPs\t" >> TEMP_table_results.txt
+            printf "$justPBPs\t" >> "$tabl_out"
 	fi
     done < TEMP_pbpID_Results.txt
 fi
 
 ###MISC. RESISTANCE###
-printf "\tMisc. Resistance:\n" >> "$sampl_out"
+printf "\tMisc. GBS Resistance:\n" >> "$sampl_out"
 lineNum=$(cat TEMP_miscR_Results.txt | wc -l)
+misc_contamination_level=7
 if [[ "$lineNum" -eq 1 ]]
 then
     #if the file only contains the header line then no misc. resistance were found
     firstLine=$(head -n1 TEMP_miscR_Results.txt)
     printf "\t\t$firstLine\n\t\tNo_Resistance\n" >> "$sampl_out"
     #printf "$firstLine\t" >> TEMP_table_title.txt
-    printf "No_Resistance" >> TEMP_table_results.txt
+    printf "No_Resistance" >> "$tabl_out"
 else
     count=0
     misc_target=()
@@ -193,24 +211,32 @@ else
             justTarget=$(echo "$line" | awk -F"\t" '{print $1}')
             justDepth=$(echo "$line" | awk -F"\t" '{print $4}')
             justMatchType=$(echo "$line" | awk -F"\t" '{print $2}')
-            if [[ $(echo "$justDepth > $contamination_level" | bc) -eq 1 ]]
+            if [[ $(echo "$justDepth > $misc_contamination_level" | bc) -eq 1 ]]
             then
-                echo "Target $justTarget is a match"
-		misc_target+=("$justTarget($justDepth|$justMatchType)")
-		#printf "$justTarget;" >> TEMP_table_results.txt
+		#this condition checks if the target is one of the extraction alleles. If so, it will append (extract) to output
+		if [[ "$justMatchType" == "imperfect" && " ${extract_arr[@]} " =~ " ${justTarget} " ]]
+		then
+                    echo "Target $justTarget is a match but needs extraction"
+		    #misc_target+=("$justTarget($justDepth|$justMatchType)")
+		    #printf "$justTarget;" >> TEMP_table_results.txt
+		    misc_target+=("$justTarget(extract)")
+		else
+		    echo "Target $justTarget is a match"
+		    misc_target+=("$justTarget")
+		fi
 	    fi
         fi
     done < TEMP_miscR_Results.txt
     #if the output array 'misc_target' is not empty, print out the sorted types to the 'TEMP_table_results.txt' file
     if [ ${#misc_target[@]} -eq 0 ];
     then
-        printf "No_Resistance" >> TEMP_table_results.txt
+        printf "No_Resistance" >> "$tabl_out"
     else
-        printf '%s\n' "${misc_target[@]}" | sort | tr '\n' ';'
-        printf '%s\n' "${misc_target[@]}" | sort | tr '\n' ';' >> TEMP_table_results.txt
+        printf '%s\n' "${misc_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g'
+        printf '%s\n' "${misc_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g' >> "$tabl_out"
     fi
 fi
-printf "\t" >> TEMP_table_results.txt
+printf "\t" >> "$tabl_out"
 
 ###Surface / Secretory Protein Output (Not including T-Antigens)###
 printf "\tProtein Targets:\n" >> "$sampl_out"
@@ -220,7 +246,7 @@ then
     #if the file only contains the header line then no surface/secretory targets were typed
     firstLine=$(head -n1 TEMP_protein_Results.txt)
     printf "\t\t$firstLine\n\t\tNo_Protein_Targets\n" >> "$sampl_out"
-    printf "No_Protein_Targets" >> TEMP_table_results.txt
+    printf "No_Protein_Targets" >> "$tabl_out"
 else
     count=0
     prot_target=()
@@ -241,7 +267,8 @@ else
             then
                 echo "Target $justTarget is a match"
                 #printf "$justTarget-($justDepth);" >> TEMP_table_results.txt
-                prot_target+=("$justTarget($justDepth)")
+                #prot_target+=("$justTarget($justDepth)")
+		prot_target+=("$justTarget")
             fi
         fi
     done < TEMP_protein_Results.txt
@@ -249,22 +276,118 @@ else
     #if the output array 'prot_target' is not empty, print out the sorted types to the 'TEMP_table_results.txt' file
     if [ ${#prot_target[@]} -eq 0 ];
     then
-        printf "No_Protein_Targets" >> TEMP_table_results.txt
+        printf "No_Protein_Targets" >> "$tabl_out"
     else
-        printf '%s\n' "${prot_target[@]}" | sort | tr '\n' ';'
-        printf '%s\n' "${prot_target[@]}" | sort | tr '\n' ';' >> TEMP_table_results.txt
+        printf '%s\n' "${prot_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g'
+        printf '%s\n' "${prot_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g' >> "$tabl_out"
     fi
 fi
-printf "\n" >> "$sampl_out"
-printf "\n" >> TEMP_table_results.txt
+printf "\t" >> "$tabl_out"
 
-#cat TEMP_table_results.txt
-#cat "$sampl_out" >> "$batch_out"/SAMPL_GBS_"$batch_name"_Typing_Results.txt
-#cat TEMP_table_results.txt >> "$batch_out"/TABLE_GBS_"$batch_name"_Typing_Results.txt
-#if [[ -e TEMP_newPBP_allele_info.txt ]]
-#then
-#    cat TEMP_newPBP_allele_info.txt >> "$batch_out"/UPDATR_GBS_"$batch_name"_PBP-DB_updater.txt
-#fi
+###ARG-ANNOT and ResFinder Resistance Gene Typing Output###
+printf "\tGeneral Resistance Targets:\n\t\tDB_Target\tMatch_Type\tDepth\n" >> "$sampl_out"
+genRes_target=()
+if [[ -s out_nameARG__fullgenes__ARGannot_r1__results.txt ]]
+then
+    count=0
+    while read -r line
+    do
+        count=$(( $count + 1 ))
+        if [[ "$count" -ne 1 ]]
+        then
+	    isIdentical="identical"
+	    justDiffs=$(echo "$line" | awk -F"\t" '{print $7}')
+	    if [[ -n "$justDiffs" ]]
+	    then
+		isIdentical="imperfect"
+	    fi
+	    justTarget=$(echo "$line" | awk -F"\t" '{print $4}')
+	    justDepth=$(echo "$line" | awk -F"\t" '{print $6}')
+	    printf "\t\tARGannot_r1_$justTarget\t$isIdentical\t$justDepth\n" >> "$sampl_out"
+	    if [[ $(echo "$justDepth > $contamination_level" | bc) -eq 1 ]]
+	    then
+		echo "Target $justTarget is a match"
+		genRes_target+=("ARGannot-r1_$justTarget")
+	    fi
+	fi
+    done < out_nameARG__fullgenes__ARGannot_r1__results.txt
+fi
+if [[ -s out_nameRES__fullgenes__ResFinder__results.txt ]]
+then
+    count=0
+    while read -r line
+    do
+        count=$(( $count + 1 ))
+        if [[ "$count" -ne 1 ]]
+        then
+	    isIdentical="identical"
+	    justDiffs=$(echo "$line" | awk -F"\t" '{print $7}')
+	    if [[ -n "$justDiffs" ]]
+	    then
+		isIdentical="imperfect"
+	    fi
+	    justTarget=$(echo "$line" | awk -F"\t" '{print $4}')
+	    justDepth=$(echo "$line" | awk -F"\t" '{print $6}')
+	    printf "\t\tResFinder_$justTarget\t$isIdentical\t$justDepth\n" >> "$sampl_out"
+	    if [[ $(echo "$justDepth > $contamination_level" | bc) -eq 1 ]]
+	    then
+		echo "Target $justTarget is a match"
+		genRes_target+=("ResFinder_$justTarget")
+	    fi
+	fi
+    done < out_nameRES__fullgenes__ResFinder__results.txt
+fi
+#if the output array 'genRes_target' is not empty, print out the sorted types to the 'TEMP_table_results.txt' file
+if [ ${#genRes_target[@]} -eq 0 ];
+then
+    printf "No_Gen_Resistance_Targets" >> "$tabl_out"
+    printf "\t\tNo_Gen_Resistance_Targets" >> "$sampl_out"
+else
+    printf '%s\n' "${genRes_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g'
+    printf '%s\n' "${genRes_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g' >> "$tabl_out"
+fi
+printf "\t" >> "$tabl_out"
+
+###PlasmidFinder Plasmid Typing Output###
+printf "\tPlasmid Prediction Targets:\n\t\tTarget\tMatch_Type\tDepth\n" >> "$sampl_out"
+if [[ -s out_namePLAS__fullgenes__PlasmidFinder__results.txt ]]
+then 
+    count=0
+    while read -r line
+    do
+	count=$(( $count + 1 ))
+	if [[ "$count" -ne 1 ]]
+	then
+	    isIdentical="identical"
+	    justDiffs=$(echo "$line" | awk -F"\t" '{print $7}')
+	    if [[ -n "$justDiffs" ]]
+	    then
+		isIdentical="imperfect"
+	    fi
+	    justTarget=$(echo "$line" | awk -F"\t" '{print $4}')
+	    justDepth=$(echo "$line" | awk -F"\t" '{print $6}')
+	    printf "\t\t$justTarget\t$isIdentical\t$justDepth" >> "$sampl_out"
+	    if [[ $(echo "$justDepth > $contamination_level" | bc) -eq 1 ]]
+	    then
+		echo "Target $justTarget is a match"
+		plas_target+=("$justTarget")
+	    fi
+	fi
+    done < out_namePLAS__fullgenes__PlasmidFinder__results.txt
+fi
+#if the output array 'genRes_target' is not empty, print out the sorted types to the 'TEMP_table_results.txt' file
+if [ ${#plas_target[@]} -eq 0 ];
+then
+    printf "No_Plasmid_Targets" >> "$tabl_out"
+    printf "\t\tNo_Plasmid_Targets" >> "$sampl_out"
+else
+    printf '%s\n' "${plas_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g'
+    printf '%s\n' "${plas_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g' >> "$tabl_out"
+fi
+printf "\n\n" >> "$sampl_out"
+printf "\n" >> "$tabl_out"
+
+
 
 
 ###Unload Modules###
@@ -276,3 +399,4 @@ module unload samtools/0.1.18
 module unload bowtie2/2.1.0
 module unload freebayes/0.9.21
 module unload prodigal/2.60
+module unload srst2/0.1.7

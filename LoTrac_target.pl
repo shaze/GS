@@ -135,7 +135,7 @@ sub help
 die <<EOF
 
 USAGE
-emm_typer.pl -1 <forward fastq file: fastq> -2 <reverse fastq file: fastq> -q <query sequence file: file path> -o <output directory name: string> -n <output name prefix: string> -S <genome size>  [OPTIONS]
+LoTrac_target.pl -1 <forward fastq file: fastq> -2 <reverse fastq file: fastq> -q <query sequence file: file path> -o <output directory name: string> -n <output name prefix: string> -S <genome size>  [OPTIONS]
               
     -h   print usage
     -1   forward fastq sequence filename (including full path)

@@ -101,7 +101,7 @@ fi
 ###Create the batch output files###
 batch_name=$(echo "$batch_dir" | awk -F"/" '{print $(NF-3)}')
 #printf "Sample_Name\temm_Type\temm_Seq\t%_identity\tmatch_length\n" >> "$out_analysis"/JanOw_"$batch_name"_emmType_results.txt
-printf "Sample\tSerotype\tST\tadhP\tpheS\tatr\tglnA\tsdhA\tglcK\ttkt\tPBP_Code(1A:2X)\tMisc_Resistance\tSurface-Secretory_Type\n" >> "$out_analysis"/TABLE_GBS_"$batch_name"_Typing_Results.txt
+printf "Sample\tSerotype\tST\tadhP\tpheS\tatr\tglnA\tsdhA\tglcK\ttkt\tPBP_Code(1A:2X)\tMisc_Resistance\tSurface-Secretory_Type\tGen_Resistance\tPlasmid_Target\n" >> "$out_analysis"/TABLE_GBS_"$batch_name"_Typing_Results.txt
 
 ###Will search thru every file in the batch directory and check if it matches the following regexs: _L.*_R1_001.fastq and _L.*_R2_001.fastq###
 ###If both paired end fastq files are found then the full paths of each file will be written to the 'job-control.txt' file###
@@ -155,7 +155,7 @@ done
 
 
 ###Send the jobs out on the cluster with each sample running in parallel###
-qsub -sync y -q all.q -t 1-$(cat $out_jobCntrl/job-control.txt | wc -l) -cwd -o "$out_qsub" -e "$out_qsub" ./StrepLab-JanOw_GBS-Typer.sh $out_jobCntrl
+qsub -sync y -q dbd.q -t 1-$(cat $out_jobCntrl/job-control.txt | wc -l) -cwd -o "$out_qsub" -e "$out_qsub" ./StrepLab-JanOw_GBS-Typer.sh $out_jobCntrl
 
 ###Output the emm type/MLST/drug resistance data for this sample to it's results output file###
 while read -r line
@@ -167,8 +167,8 @@ do
     #cat $final_outDir/TEMP_GBS_Typing_Results.txt
     #cat $final_outDir/TEMP_newPBP_allele_info.txt
 
-    cat $final_outDir/TEMP_GBS_Typing_Results.txt >> $final_result_Dir/SAMPL_GBS_"$batch_name"_Typing_Results.txt
-    cat $final_outDir/TEMP_table_results.txt >> $final_result_Dir/TABLE_GBS_"$batch_name"_Typing_Results.txt
+    cat $final_outDir/SAMPLE_Isolate__Typing_Results.txt >> $final_result_Dir/SAMPL_GBS_"$batch_name"_Typing_Results.txt
+    cat $final_outDir/TABLE_Isolate_Typing_results.txt >> $final_result_Dir/TABLE_GBS_"$batch_name"_Typing_Results.txt
     #cat $final_outDir/TEMP_newPBP_allele_info.txt >> $final_result_Dir/UPDATR_GBS_"$batch_name"_Typing_Results.txt
     if [[ -e $final_outDir/TEMP_newPBP_allele_info.txt ]]
     then

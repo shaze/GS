@@ -94,7 +94,7 @@ sub help
 die <<EOF
 
 USAGE
-emm_typer.pl -1 <forward fastq file: fastq> -2 <reverse fastq file: fastq> -r <reference databases directory: file path> -o <output directory name: string> -n <output name prefix: string>  [OPTIONS]
+GBS_serotyper.pl -1 <forward fastq file: fastq> -2 <reverse fastq file: fastq> -r <reference databases directory: file path> -o <output directory name: string> -n <output name prefix: string>  [OPTIONS]
 
     -h   print usage
     -1   forward fastq sequence filename (including full path)
@@ -117,7 +117,7 @@ print $fh "Matched_Allele\tMatch_Type\tSerotype\tAvgDepth\n";
 
 ###Detect GAS serotype sequence###
 #my $sero_outname = "SERO_$outName";
-system("mod-srst2.py --input_pe $fastq1 $fastq2 --output $outName --log --save_scores --min_coverage 99 --max_divergence 4 --gene_db $sero_DB");
+system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $outName --log --save_scores --min_coverage 99.9 --max_divergence 4 --gene_db $sero_DB");
 
 ###mpileup the 'SERO_.*.sorted.bam and create the called variants file with freebayes.
 opendir(DIR, ".") or die "Couldn't open directory for reading: $!";

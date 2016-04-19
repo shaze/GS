@@ -145,7 +145,7 @@ my ($help, $fastq1, $fastq2, $ref_dir, $misc_DB, $vanc_DB, $outDir, $outName) = 
 
 ###Subroutines###
 sub sixFrame_Translate {
-    my ($DNAseq,$opt_f) = @_;
+    my ($seq_input,$opt_f) = @_;
 
     sub codon2aa{
 	my($codon)=@_;
@@ -166,7 +166,12 @@ sub sixFrame_Translate {
 	}
     }
 
+    (my $DNAheader,my @DANseq)=split(/\n/,$seq_input);
+    chomp $DNAheader;
+    $DNAheader=~s/\s+$//g;
+    my $DNAseq = join( '',@DANseq);
     $DNAseq =~ s/\s//g;
+    $DNAheader=~s/>//g;
     $DNAseq=~s/>//g;
     my$DNA_length=length$DNAseq;
     #print "\nSeq:$DNAheader\t:$DNA_length nt\n\n";
@@ -224,11 +229,11 @@ sub sixFrame_Translate {
 		    #$dna[6].=codon2nt($codon6);
 		    }
     }
-#print "$protein[$opt_f]\n";
+#print "translate result\n$protein[$opt_f]\n";
 return $protein[$opt_f];
 }
 
-sub extractFastaByID {
+sub extractSeqByID {
     my ($lookup, $reference) = @_;
     open my $fh, "<", $reference or die $!;
     local $/ = "\n>";  # read by FASTA record
@@ -251,6 +256,57 @@ sub extractFastaByID {
 return $output;
 }
 
+sub extractFastaByID {
+    my ($lookup, $reference) = @_;
+    open my $fh, "<", $reference or die $!;
+    local $/ = "\n>";  # read by FASTA record
+
+    my $output;
+    while (my $seq = <$fh>) {
+        chomp $seq;
+        #print "while seq:\n$seq\n";
+        my ($id) = $seq =~ /^>*(\S+)/;  # parse ID as first word in FASTA header
+        if ($id eq $lookup) {
+            $seq =~ s/^>*.+\n//;  # remove FASTA header
+            $seq =~ s/\n//g;  # remove endlines
+            #print ">$id\n";
+            #print "$seq\n";
+            $output = ">$id\n$seq\n";
+            #$output = $seq;
+            last;
+        }
+    }
+    return $output;
+}
+
+sub freebayes_prior_fix {
+    my ($bamFile, $refFile, $target) = @_;
+    (my $samFile = $bamFile) =~ s/\.bam/\.sam/g;
+    system("samtools view -h $bamFile > $samFile");
+    system("cat $samFile | grep -E \"^\@HD|^\@SQ.*$target|^\@PG\" > CHECK_target_seq.sam");
+    system("awk -F'\t' '\$3 == \"$target\" {print \$0}' $samFile >> CHECK_target_seq.sam");
+    system("samtools view -bS CHECK_target_seq.sam > CHECK_target_seq.bam");
+    system("samtools index CHECK_target_seq.bam CHECK_target_seq.bai");
+    my $REF_seq = extractFastaByID("$target","$refFile");
+    open(my $rf,'>',"CHECK_target_ref.fna");
+    print $rf "$REF_seq\n";
+    close $rf;
+    system("freebayes -q 20 -p 1 -f CHECK_target_ref.fna CHECK_target_seq.bam -v CHECK_target_seq.vcf");
+    system("bgzip CHECK_target_seq.vcf");
+    system("tabix -p vcf CHECK_target_seq.vcf.gz");
+    my $extractSeq = `echo "$REF_seq" | vcf-consensus CHECK_target_seq.vcf.gz`;
+    chomp($extractSeq);
+    #print "$target-----------------------------------\n";
+    #system("cat CHECK_target_seq.sam");
+    #system("zcat CHECK_target_seq.vcf.gz");
+    #print "reference seq:\n$REF_seq\n";
+    #print "extracted Seq:\n$extractSeq\n";
+    #print "$target-----------------------------------\n";
+    system("rm CHECK_target*");
+    return $extractSeq;
+}
+
+
 
 
 
@@ -262,8 +318,8 @@ print $fh "Target\tMatch_Type\tResistance\tCoverage\n";
 
 my $outName_MISC = "MISC_".$outName;
 my $outName_VANC = "VANC_".$outName;
-system("mod-srst2.py --input_pe $fastq1 $fastq2 --output $outName_MISC --log --save_scores --min_coverage 99 --max_divergence 5 --gene_db $misc_DB");
-system("mod-srst2.py --input_pe $fastq1 $fastq2 --output $outName_VANC --log --save_scores --min_coverage 99 --max_divergence 15 --gene_db $vanc_DB");
+system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $outName_MISC --log --save_scores --min_coverage 99.9 --max_divergence 5 --gene_db $misc_DB");
+system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $outName_VANC --log --save_scores --min_coverage 95.0 --max_divergence 15 --gene_db $vanc_DB");
 
 my @TEMP_MISC_bam = glob("MISC_*\.sorted\.bam");
 my @TEMP_MISC_fullgene = glob("MISC_*__fullgenes__*__results\.txt");
@@ -274,14 +330,14 @@ print "misc bam is: $MISC_bam || misc full gene $MISC_full_name\n";
 (my $MISC_bai = $MISC_bam) =~ s/\.bam/\.bai/g;
 
 ###Create the variant-called consensus fasta###
-system("samtools index $MISC_bam $MISC_bai");
-system("freebayes -q 20 -p 1 -f $misc_DB $MISC_bam -v $MISC_vcf");
-system("bgzip $MISC_vcf");
-system("tabix -p vcf $MISC_vcf.gz");
+#system("samtools index $MISC_bam $MISC_bai");
+#system("freebayes -q 20 -p 1 -f $misc_DB $MISC_bam -v $MISC_vcf");
+#system("bgzip $MISC_vcf");
+#system("tabix -p vcf $MISC_vcf.gz");
 ##my $MLST_consensus = `cat $misc_DB | vcf-consensus $MISC_vcf.gz`;
 ##print "MLST consensus:\n$MLST_consensus\n";
 ##print $exFile_out "New MLST Allele Consensus:\n$MLST_consensus\n";
-system("cat $misc_DB | vcf-consensus $MISC_vcf.gz > TEMP_miscR_consensus.fna");
+#system("cat $misc_DB | vcf-consensus $MISC_vcf.gz > TEMP_miscR_consensus.fna");
 
 my %drugRes_Targets = (
     "ERMB-1" => "Macrolides",
@@ -341,9 +397,11 @@ foreach my $key (keys(%miscR_Type)) {
 ###Now Type the Non-Presence/Absence Targets###
 if ($miscR_Type{"PARCGBS-1"}) {
     my @PARC_output;
-    my $PARC_seq = extractFastaByID("7__PARCGBS__PARCGBS-1__7","TEMP_miscR_consensus.fna");
+    my @miscR_value = split(':',$miscR_Type{"PARCGBS-1"});
+    #my $PARC_seq = extractFastaByID("7__PARCGBS__PARCGBS-1__7","TEMP_miscR_consensus.fna");
+    my $PARC_seq = freebayes_prior_fix($MISC_bam, $misc_DB,"7__PARCGBS__PARCGBS-1__7");
     my $PARC_aaSeq = sixFrame_Translate($PARC_seq,1);
-    print "PARCgbs sequence: $PARC_aaSeq\n";
+    print "PARCgbs sequence: $PARC_seq || $PARC_aaSeq\n";
     my $PARC_pos6 = substr($PARC_aaSeq,5,1);
     my $PARC_pos10 = substr($PARC_aaSeq,9,1);
     if ($PARC_pos6 ne "S") {
@@ -356,17 +414,22 @@ if ($miscR_Type{"PARCGBS-1"}) {
 	push(@PARC_output,$pos_output);
 	$isNotResistant = "no";
     }
+
     if (@PARC_output) {
 	my @miscR_value = split(':',$miscR_Type{"PARCGBS-1"});
 	my $PARC_final = join(':',@PARC_output);
-	print $fh "PARCGBS-1\t$PARC_final\tFluoroquinolones\t$miscR_value[0]\n";
+	print $fh "PARCGBS-1\t$PARC_final\tFLQ\t$miscR_value[0]\n";
+    } elsif ($miscR_value[1] eq "yes") {
+	print $fh "PARCGBS-1\timperfect\tPossible_FLQ_(Extract Seq)\t$miscR_value[0]\n";
+	$miscR_extract{"PARCGBS-1"} = $PARC_seq;
     }
 }
 
 if ($miscR_Type{"GYRAGBS-1"}) {
     my @GYRA_output;
-    my $GYRA_seq = extractFastaByID("5__GYRAGBS__GYRAGBS-1__5","TEMP_miscR_consensus.fna");
-    #print "GYRA DNA seq: $GYRA_seq\n";
+    my @miscR_value = split(':',$miscR_Type{"GYRAGBS-1"});
+    #my $GYRA_seq = extractFastaByID("5__GYRAGBS__GYRAGBS-1__5","TEMP_miscR_consensus.fna");
+    my $GYRA_seq = freebayes_prior_fix($MISC_bam, $misc_DB, "5__GYRAGBS__GYRAGBS-1__5");
     my $GYRA_aaSeq = sixFrame_Translate($GYRA_seq,1);
     print "GYRAgbs sequence: $GYRA_aaSeq\n";
     my $GYRA_pos11 = substr($GYRA_aaSeq,10,1);
@@ -379,6 +442,9 @@ if ($miscR_Type{"GYRAGBS-1"}) {
         my @miscR_value = split(':',$miscR_Type{"GYRAGBS-1"});
         my $GYRA_final = join(':',@GYRA_output);
         print $fh "GYRAGBS-1\t$GYRA_final\tFluoroquinolones\t$miscR_value[0]\n";
+    } elsif ($miscR_value[1] eq "yes") {
+        print $fh "GYRAGBS-1\timperfect\tPossible_FLQ_(Extract Seq)\t$miscR_value[0]\n";
+        $miscR_extract{"GYRAGBS-1"} = $GYRA_seq;
     }
 }
 #################################################################
@@ -386,7 +452,8 @@ if ($miscR_Type{"GYRAGBS-1"}) {
 ###Type the 23S ribosomal RNA MLS resistance target###
 if ($miscR_Type{"23SWT-1"}) {
     my @two3SWT1_output;
-    my $two3SWT1_seq = extractFastaByID("11__23SWT__23SWT-1__11","TEMP_miscR_consensus.fna");
+    #my $two3SWT1_seq = extractFastaByID("11__23SWT__23SWT-1__11","TEMP_miscR_consensus.fna");
+    my $two3SWT1_seq = freebayes_prior_fix($MISC_bam, $misc_DB, "11__23SWT__23SWT-1__11");
     my $two3SWT1_pos21 = substr($two3SWT1_seq,20,1);
     my $two3SWT1_pos20 = substr($two3SWT1_seq,19,1);
     if ($two3SWT1_pos21 eq "G") {
@@ -408,7 +475,8 @@ if ($miscR_Type{"23SWT-1"}) {
 
 if ($miscR_Type{"23SWT-3"}) {
     my @two3SWT2_output;
-    my $two3SWT2_seq = extractFastaByID("12__23SWT__23SWT-3__12","TEMP_miscR_consensus.fna");
+    #my $two3SWT2_seq = extractFastaByID("12__23SWT__23SWT-3__12","TEMP_miscR_consensus.fna");
+    my $two3SWT2_seq = freebayes_prior_fix($MISC_bam, $misc_DB, "12__23SWT__23SWT-3__12");
     my $two3SWT2_pos44 = substr($two3SWT2_seq,43,1);
     if ($two3SWT2_pos44 eq "G") {
         my $pos_out = "pos44=G";
@@ -427,52 +495,57 @@ if ($miscR_Type{"23SWT-3"}) {
 
 ###Type the RPLD and RPLV Macrolide and Streptogramins targets###
 if ($miscR_Type{"RPLDGBS-1"}) {
-    my $RPLD1_seq = extractFastaByID("16__RPLD__RPLDGBS-1__16","TEMP_miscR_consensus.fna");
+    #my $RPLD1_seq = extractFastaByID("16__RPLD__RPLDGBS-1__16","TEMP_miscR_consensus.fna");
+    my $RPLD1_seq = freebayes_prior_fix($MISC_bam, $misc_DB, "16__RPLD__RPLDGBS-1__16");
     my $RPLD1_aaSeq = sixFrame_Translate($RPLD1_seq,1);
     if ($RPLD1_aaSeq ne "KPWRQKGTGRA") {
 	print "RPLD1 seq: $RPLD1_seq\n";
 	my @miscR_value = split(':',$miscR_Type{"RPLDGBS-1"});
 	print $fh "RPLDGBS-1\timperfect\tPossible_MS_(Extract Seq)\t$miscR_value[0]\n";
-       	$miscR_extract{"RPLDGBS-1"} = $RPLD1_aaSeq;
+       	$miscR_extract{"RPLDGBS-1"} = $RPLD1_seq;
     }
 }
 
 if ($miscR_Type{"RPLDGBS-2"}) {
-    my $RPLD2_seq = extractFastaByID("17__RPLD__RPLDGBS-2__17","TEMP_miscR_consensus.fna");
+    #my $RPLD2_seq = extractFastaByID("17__RPLD__RPLDGBS-2__17","TEMP_miscR_consensus.fna");
+    my $RPLD2_seq = freebayes_prior_fix($MISC_bam, $misc_DB, "17__RPLD__RPLDGBS-2__17");
     my $RPLD2_aaSeq = sixFrame_Translate($RPLD2_seq,1);
     if ($RPLD2_aaSeq ne "EAIFGIEPNESVVFDVVI") {
 	print "RPLD2 seq: $RPLD2_seq\n";
         my @miscR_value = split(':',$miscR_Type{"RPLDGBS-2"});
         print $fh "RPLDGBS-2\timperfect\tPossible_MS_(Extract Seq)\t$miscR_value[0]\n";
-        $miscR_extract{"RPLDGBS-2"} = $RPLD2_aaSeq;
+        $miscR_extract{"RPLDGBS-2"} = $RPLD2_seq;
     }
 }
 
 if ($miscR_Type{"RPLVGBS-1"}) {
-    my $RPLV1_seq = extractFastaByID("18__RPLV__RPLVGBS-1__18","TEMP_miscR_consensus.fna");
+    #my $RPLV1_seq = extractFastaByID("18__RPLV__RPLVGBS-1__18","TEMP_miscR_consensus.fna");
+    my $RPLV1_seq = freebayes_prior_fix($MISC_bam, $misc_DB, "18__RPLV__RPLVGBS-1__18");
     my $RPLV1_aaSeq = sixFrame_Translate($RPLV1_seq,1);
     if ($RPLV1_aaSeq ne "KRTTHVTVV") {
         my @miscR_value = split(':',$miscR_Type{"RPLVGBS-1"});
         print $fh "RPLVGBS-1\timperfect\tPossible_MS_(Extract Seq)\t$miscR_value[0]\n";
-        $miscR_extract{"RPLVGBS-1"} = $RPLV1_aaSeq;
+        $miscR_extract{"RPLVGBS-1"} = $RPLV1_seq;
     }
 }
 
 if ($miscR_Type{"RPLVGBS-2"}) {
-    my $RPLV2_seq = extractFastaByID("19__RPLV__RPLVGBS-2__19","TEMP_miscR_consensus.fna");
+    #my $RPLV2_seq = extractFastaByID("19__RPLV__RPLVGBS-2__19","TEMP_miscR_consensus.fna");
+    my $RPLV2_seq = freebayes_prior_fix($MISC_bam, $misc_DB, "19__RPLV__RPLVGBS-2__19");
     my $RPLV2_aaSeq = sixFrame_Translate($RPLV2_seq,1);
     if ($RPLV2_aaSeq ne "PTMKRFRPRA") {
 	print "RPLV2 seq: $RPLV2_seq\n";
         my @miscR_value = split(':',$miscR_Type{"RPLVGBS-2"});
         print $fh "RPLVGBS-2\timperfect\tPossible_MS_(Extract Seq)\t$miscR_value[0]\n";
-        $miscR_extract{"RPLVGBS-2"} = $RPLV2_aaSeq;
+        $miscR_extract{"RPLVGBS-2"} = $RPLV2_seq;
     }
 }
 #################################################################
 
 ###Type Rifampicin Resistance Using 4 RPOB Targets###
 if ($miscR_Type{"RPOBgbs-1"}) {
-    my $RPOB_seq = extractFastaByID("20__RPOBgbs__RPOBgbs-1__20","TEMP_miscR_consensus.fna");
+    #my $RPOB_seq = extractFastaByID("20__RPOBgbs__RPOBgbs-1__20","TEMP_miscR_consensus.fna");
+    my $RPOB_seq = freebayes_prior_fix($MISC_bam, $misc_DB, "20__RPOBgbs__RPOBgbs-1__20");
     my $RPOB_aaSeq = sixFrame_Translate($RPOB_seq,1);
     my $RPOB_aaRef = "FGSSQLSQFMDQHNPLSELSHKRRLSALGPGGL";
     if ($RPOB_aaSeq ne "FGSSQLSQFMDQHNPLSELSHKRRLSALGPGGL") {
@@ -487,12 +560,13 @@ if ($miscR_Type{"RPOBgbs-1"}) {
         my $diff_output = join(';',@seq_diffs);
         my @miscR_value = split(':',$miscR_Type{"RPOBgbs-1"});
         print $fh "RPOBgbs-1\t$diff_output\tPossible_Rif_(Extract Seq)\t$miscR_value[0]\n";
-        $miscR_extract{"RPOBgbs-1"} = $RPOB_aaSeq;
+        $miscR_extract{"RPOBgbs-1"} = $RPOB_seq;
     }
 }
 
 if ($miscR_Type{"RPOBgbs-2"}) {
-    my $RPOB_seq = extractFastaByID("21__RPOBgbs__RPOBgbs-2__21","TEMP_miscR_consensus.fna");
+    #my $RPOB_seq = extractFastaByID("21__RPOBgbs__RPOBgbs-2__21","TEMP_miscR_consensus.fna");
+    my $RPOB_seq = freebayes_prior_fix($MISC_bam, $misc_DB, "21__RPOBgbs__RPOBgbs-2__21");
     my $RPOB_aaSeq = sixFrame_Translate($RPOB_seq,1);
     my $RPOB_aaRef = "VSQLVRSPGV";
     if ($RPOB_aaSeq ne "VSQLVRSPGV") {
@@ -507,12 +581,13 @@ if ($miscR_Type{"RPOBgbs-2"}) {
         my $diff_output = join(';',@seq_diffs);
         my @miscR_value = split(':',$miscR_Type{"RPOBgbs-2"});
         print $fh "RPOBgbs-2\t$diff_output\tPossible_Rif_(Extract Seq)\t$miscR_value[0]\n";
-        $miscR_extract{"RPOBgbs-2"} = $RPOB_aaSeq;
+        $miscR_extract{"RPOBgbs-2"} = $RPOB_seq;
     }
 }
 
 if ($miscR_Type{"RPOBgbs-3"}) {
-    my $RPOB_seq = extractFastaByID("22__RPOBgbs__RPOBgbs-3__22","TEMP_miscR_consensus.fna");
+    #my $RPOB_seq = extractFastaByID("22__RPOBgbs__RPOBgbs-3__22","TEMP_miscR_consensus.fna");
+    my $RPOB_seq = freebayes_prior_fix($MISC_bam, $misc_DB, "22__RPOBgbs__RPOBgbs-3__22");
     my $RPOB_aaSeq = sixFrame_Translate($RPOB_seq,1);
     my $RPOB_aaRef = "FTVAQANSKLNEDGTFAEEIVMGRHQGNNQEFPSSI";
     if ($RPOB_aaSeq ne "FTVAQANSKLNEDGTFAEEIVMGRHQGNNQEFPSSI") {
@@ -527,12 +602,13 @@ if ($miscR_Type{"RPOBgbs-3"}) {
         my $diff_output = join(';',@seq_diffs);
         my @miscR_value = split(':',$miscR_Type{"RPOBgbs-3"});
         print $fh "RPOBgbs-3\t$diff_output\tPossible_Rif_(Extract Seq)\t$miscR_value[0]\n";
-        $miscR_extract{"RPOBgbs-3"} = $RPOB_aaSeq;
+        $miscR_extract{"RPOBgbs-3"} = $RPOB_seq;
     }
 }
 
 if ($miscR_Type{"RPOBgbs-4"}) {
-    my $RPOB_seq = extractFastaByID("23__RPOBgbs__RPOBgbs-4__23","TEMP_miscR_consensus.fna");
+    #my $RPOB_seq = extractFastaByID("23__RPOBgbs__RPOBgbs-4__23","TEMP_miscR_consensus.fna");
+    my $RPOB_seq = freebayes_prior_fix($MISC_bam, $misc_DB, "23__RPOBgbs__RPOBgbs-4__23");
     my $RPOB_aaSeq = sixFrame_Translate($RPOB_seq,1);
     my $RPOB_aaRef = "LIDPKAPYVGT";
     if ($RPOB_aaSeq ne "LIDPKAPYVGT") {
@@ -547,7 +623,7 @@ if ($miscR_Type{"RPOBgbs-4"}) {
         my $diff_output = join(';',@seq_diffs);
         my @miscR_value = split(':',$miscR_Type{"RPOBgbs-4"});
         print $fh "RPOBgbs-4\t$diff_output\tPossible_Rif_(Extract Seq)\t$miscR_value[0]\n";
-        $miscR_extract{"RPOBgbs-4"} = $RPOB_aaSeq;
+        $miscR_extract{"RPOBgbs-4"} = $RPOB_seq;
     }
 }
 #################################################################
