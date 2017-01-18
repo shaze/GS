@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -106,18 +106,28 @@ sub checkOptions {
 
     $length = 0.5;
     if($opts{L}) {
-	$length = $opts{L};
-	print "The alignment length threshold: $length\n";
+	if ($opts{L} >= 0 && $opts{L} <= 1) {
+	    $length = $opts{L};
+	    print "The alignment length threshold: $length\n";
+	} else {
+	    print "The alignment length threshold has to be a number between 0 and 1\n";
+	    help();
+	}
     } else {
-	print "The default length threshold of 0.5 (50%) will be used\n";
+	print "The default length threshold of 0.5 will be used\n";
     }
 
     $identity = 0.5;
     if($opts{I}) {
-        $length = $opts{I};
-        print "The alignment identity threshold: $identity\n";
+	if ($opts{I} >= 0 && $opts{I} <= 1) {
+	    $identity = $opts{I};
+	    print "The alignment identity threshold: $identity\n";
+	} else {
+	    print "The alignment identity threshold has to be a number between 0 and 1\n";
+	    help();
+	}
     } else {
-        print "The default identity threshold of 0.5 (50%) will be used\n";
+        print "The default identity threshold of 0.5 will be used\n";
     }
     
     if($opts{f}) {
@@ -237,16 +247,6 @@ if (glob("prodigal_$outName*")) {
     unlink("PRE_$outName.fasta");
 }
 
-#print "Create a blast database using the sequences in the query fasta file\n";
-#(my $query_headr = $query) =~ s/\.f.*$//g;
-#my $query_dir = dirname($query);
-#my $blast_DB = "TEMP_".$query_headr."_nucl_blast_db";
-#if (glob("$blast_DB*")) {
-#    print "Gene blast database has already been created\n";
-#} else {
-#    system("makeblastdb -in $query -dbtype nucl -out $query_dir/$blast_DB");
-#}
-
 print "Create a blast database using the predicted genes obtained from Prodigal\n";
 if (glob("TEMP_prod_nucl_blast_db*")) {
     print "Contig blast database has already been created\n";
@@ -299,18 +299,22 @@ foreach (@query_names) {
     #my $query_strt = $bestArray[6];
     #my $query_end = $bestArray[7];
     my $match_len = $length * $query_length;
+    my $match_iden = $identity * 100;
 
     print "\nprodigal gene name of best hit against the query sequence: $best_name\n";
     print "% identity of best hit against the query sequence: $best_iden\n";
     print "length of best hit against the query sequence: $best_len\n";
+    print "match length threshold: $match_len\n";
 
-    if ($best_iden >= $identity && $best_len >= $match_len) {
-	my $prodigal_fna = `extractFastaByID.pl $best_name < prodigal_"$outName".fna`;
-	my $prodigal_faa = `extractFastaByID.pl $best_name < prodigal_"$outName".faa`;
+    if ($best_iden >= $match_iden && $best_len >= $match_len) {
+	#my $prodigal_fna = `extractFastaByID.pl $best_name < prodigal_"$outName".fna`;
+	#my $prodigal_faa = `extractFastaByID.pl $best_name < prodigal_"$outName".faa`;
+	my $prodigal_fna = extractFastaByID($best_name,"prodigal_$outName.fna");
+	my $prodigal_faa = extractFastaByID($best_name,"prodigal_$outName.faa");
 	print $exOUT "$prodigal_fna\n$prodigal_faa\n\n";
     } else {
 	open ( my $errOUT, ">>", $error_out ) or die "Could not open file $error_out: $!";
-	print $errOUT "The best blast hit ($best_name) for $query_name didn't meet minimum criteria of length and identity to call a true match\n\n";
+	print $errOUT "Gene Extraction: The best blast hit ($best_name) for $query_name didn't meet minimum criteria of length and identity to call a true match\n\n";
 	close $errOUT;
 	#next;
     }
@@ -352,10 +356,10 @@ foreach (@query_names) {
 	    } elsif ($bestArray[9] < $bestArray[8]) {
 		#my $query_extract = $query_strt - 500;
 		my $blast_endDiff = $query_length - $bestArray[7];
-		my $frag_start = $bestArray[9] - $bestArray[6];
-		my $frag_end = $blast_endDiff + $bestArray[8];
+		my $frag_start = $bestArray[8] + $bestArray[6] - 1;
+		my $frag_end = $bestArray[9] - $blast_endDiff - 1;
 		open(my $fh, '>', 'TEMP_rev_extract.bed');
-		print $fh "$best_name\t$frag_start\t$frag_end\n";
+		print $fh "$best_name\t$frag_end\t$frag_start\n";
 		close $fh;
 
 		my $extract_frag_rev = `bedtools getfasta -tab -fi ./velvet_output/contigs.fa -bed TEMP_rev_extract.bed -fo stdout`;
@@ -369,7 +373,7 @@ foreach (@query_names) {
 	    }
 	} else {
 	    open ( my $errOUT, ">>", $error_out ) or die "Could not open file $error_out: $!";
-	    print $errOUT "The best blast hit ($best_name) for $query_name fragment didn't meet minimum criteria of length and identity to call a true match\n\n";
+	    print $errOUT "Frag Extraction: The best blast hit ($best_name) for $query_name fragment didn't meet minimum criteria of length and identity to call a true match\n\n";
 	    close $errOUT;
 	    next;
 	}	

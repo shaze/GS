@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -419,10 +419,14 @@ if ($miscR_Type{"PARCGBS-1"}) {
 	my @miscR_value = split(':',$miscR_Type{"PARCGBS-1"});
 	my $PARC_final = join(':',@PARC_output);
 	print $fh "PARCGBS-1\t$PARC_final\tFLQ\t$miscR_value[0]\n";
-    } elsif ($miscR_value[1] eq "yes") {
-	print $fh "PARCGBS-1\timperfect\tPossible_FLQ_(Extract Seq)\t$miscR_value[0]\n";
-	$miscR_extract{"PARCGBS-1"} = $PARC_seq;
+    } elsif ($PARC_aaSeq !~ /HPHGDSSIYDAMVRMSQ/) {
+       print $fh "PARCGBS-1\timperfect\tPossible_FLQ_(Extract Seq)\t$miscR_value[0]\n";
+       $miscR_extract{"PARCGBS-1"} = $PARC_seq;
     }
+#    } elsif ($miscR_value[1] eq "yes") {
+#	print $fh "PARCGBS-1\timperfect\tPossible_FLQ_(Extract Seq)\t$miscR_value[0]\n";
+#	$miscR_extract{"PARCGBS-1"} = $PARC_seq;
+#    }
 }
 
 if ($miscR_Type{"GYRAGBS-1"}) {

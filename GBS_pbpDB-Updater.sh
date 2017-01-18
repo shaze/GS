@@ -6,13 +6,12 @@ module load ncbi-blast+/2.2.29
 
 #Comment blah...#
 
-while getopts :r:u:t:s: option
+while getopts :r:u:t: option
 do
     case $option in
         r) refSeq_path=$OPTARG;;
         u) update_PBP=$OPTARG;;
         t) table_out=$OPTARG;;
-	s) sample_out=$OPTARG;;
     esac
 done
 
@@ -69,26 +68,11 @@ else
     fi
 fi
 
-if [[ -z "$sample_out" ]]
-then
-    echo "The argument giving the filename of the SAMPLE formatted typing output hasn't been given."
-    exit 1
-else
-    if [[ -e "$sample_out" ]]
-    then
-        sample_out="${sample_out}"
-    else
-        echo "The argument giving the filename of the SAMPLE formatted typing output doesn't exist."
-	exit 1
-    fi
-fi
-
 eval refSeq=$refSeq
 eval pbp1A=$pbp1A
 eval pbp2X=$pbp2X
 eval update_PBP=$update_PBP
 eval table_out=$table_out
-eval sample_out=$sample_out
 
 
 
@@ -107,7 +91,6 @@ blastTyper () {
     then
         printf "The following extracted PBP sequence file is empty:\n"
         printf "$1\n"
-        #printf "$SampleName\t$pbpName\tNF\n" >> pbpID_output.txt
 	pbpAlleleID="ERROR"
         pbpStop="yes"
     fi
@@ -161,8 +144,6 @@ blastTyper () {
             ###Output the new allele to Final_newRef_Seq.faa and add it to the database###
             cat Single_newRef_Seq.faa >> "$2"
             echo "Remaking blast database"
-            #rm "$refSeq"/Blast_bLactam_"$pbpName"_prot_DB*
-            #makeblastdb -in "$2" -dbtype prot -out "$refSeq"/Blast_bLactam_"$pbpName"_prot_DB
 	    rm "$refSeq"/"$pbpName"_prot_blast_db*
 	    makeblastdb -in "$2" -dbtype prot -out "$refSeq"/"$pbpName"_prot_blast_db
             rm Single_newRef_Seq.faa
@@ -193,37 +174,9 @@ blastTyper () {
        rm "$5"
        mv "$5"_PRE "$5"
 
-       ###now do the same while loop for the SAMPLE output###
-       while IFS= read -r line
-       do
-           lineName=$(echo "$line" | awk -F"\t" '{print $1}')
-           samplName=$(echo "$3" | sed 's/PBP_//g')
-	   if [[ "$line" =~ "NEW" ]]
-	   then
-	       if [[ "$4" == "1A" ]]
-               then
-                   pbp1A_out=$(echo $line | sed 's/NEW:/'$pbpAlleleID':/g')
-                   echo "$line" | awk -v var="$pbp1A_out" -v OFS='\t' '{$11=var; print "\t\t"$11 }' >> "$6"_PRE
-               elif [[ "$4" == "2X" ]]
-               then
-                   pbp2X_out=$(echo $line | sed 's/:NEW/:'$pbpAlleleID'/g')
-                   echo "$line" | awk -v var="$pbp2X_out" -v OFS='\t' '{$11=var; print "\t\t"$11 }' >> "$6"_PRE
-               fi
-           else
-               echo "$line" >> "$6"_PRE
-           fi	   
-       done < "$6"
-       rm "$6"
-       mv "$6"_PRE "$6"
-
     ###Remove Files###
     rm prot_best_blast.txt
     rm "$SampleName"_blast-out_"$pbpName".txt
-
-    #pbpGene=$(echo "$pbpName" | sed 's/pbp//g')
-    #pathPrefx=$(dirname "$1")
-    #rm "$pathPrefx"/Final-Full_"$pbpGene"-S2*
-    #rm "$pathPrefx"/Final-Frag_"$pbpGene"-S2*
 }
 
 
@@ -231,7 +184,6 @@ blastTyper () {
 
 ###Start Doing Stuff###
 cp "$table_out" "$table_out"_OLD
-cp "$sample_out" "$sample_out"_OLD
 while read line
 do
     sampleID=$(echo "$line" | awk -F"\t" '{print $1}')
@@ -240,10 +192,10 @@ do
     #echo "sample: $sampleID | path: $pbpPath | allele: $pbpAllele"
     if [[ "$pbpAllele" == "1A" ]]
     then
-        blastTyper "$pbpPath" "$Ref_1A" "$sampleID" "$pbpAllele" "$table_out" "$sample_out"
+        blastTyper "$pbpPath" "$Ref_1A" "$sampleID" "$pbpAllele" "$table_out"
     elif [[ "$pbpAllele" == "2X" ]]
     then
-        blastTyper "$pbpPath" "$Ref_2X" "$sampleID" "$pbpAllele" "$table_out" "$sample_out"
+        blastTyper "$pbpPath" "$Ref_2X" "$sampleID" "$pbpAllele" "$table_out"
     fi
 done < "$update_PBP"
 
