@@ -155,7 +155,7 @@ done
 
 
 ###Send the jobs out on the cluster with each sample running in parallel###
-qsub -sync y -q all.q -t 1-$(cat $out_jobCntrl/job-control.txt | wc -l) -cwd -o "$out_qsub" -e "$out_qsub" ./StrepLab-JanOw_GBS-Typer.sh $out_jobCntrl
+qsub -sync y -q dbd.q -t 1-$(cat $out_jobCntrl/job-control.txt | wc -l) -cwd -o "$out_qsub" -e "$out_qsub" ./StrepLab-JanOw_GBS-Typer.sh $out_jobCntrl
 
 #printf "Sample\tSerotype\tST\tadhP\tpheS\tatr\tglnA\tsdhA\tglcK\ttkt\tPBP_Code(1A:2X)\tTET\tEC\tFQ\tOTHER\tALP\tSRR\tPILI\tHVGA\n" >> "$out_analysis"/TABLE_GBS_"$batch_name"_Typing_Results.txt
 ###Output the emm type/MLST/drug resistance data for this sample to it's results output file###

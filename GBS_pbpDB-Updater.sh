@@ -101,7 +101,7 @@ blastTyper () {
         if [[ -z "$isBlastDB" ]]
         then
             ### Make blast database
-            makeblastdb -in "$2" -dbtype prot -out "$refSeq"/"$pbpName"_prot_blast_db
+            makeblastdb -in "$2" -dbtype prot -out "$refSeq"/Blast_bLactam_"$pbpName"_prot_DB
             blastp -db "$refSeq"/"$pbpName"_prot_blast_db -query "$1" -outfmt 6 -out "$SampleName"_blast-out_"$pbpName".txt
         else
             blastp -db "$refSeq"/"$pbpName"_prot_blast_db -query "$1" -outfmt 6 -out "$SampleName"_blast-out_"$pbpName".txt
@@ -145,7 +145,7 @@ blastTyper () {
             cat Single_newRef_Seq.faa >> "$2"
             echo "Remaking blast database"
 	    rm "$refSeq"/"$pbpName"_prot_blast_db*
-	    makeblastdb -in "$2" -dbtype prot -out "$refSeq"/"$pbpName"_prot_blast_db
+	    makeblastdb -in "$2" -dbtype prot -out "$refSeq"/Blast_bLactam_"$pbpName"_prot_DB
             rm Single_newRef_Seq.faa
         fi
     fi  
