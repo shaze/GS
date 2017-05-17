@@ -101,7 +101,8 @@ fi
 ###Create the batch output files###
 batch_name=$(echo "$batch_dir" | awk -F"/" '{print $(NF-3)}')
 #printf "Sample_Name\temm_Type\temm_Seq\t%_identity\tmatch_length\n" >> "$out_analysis"/JanOw_"$batch_name"_emmType_results.txt
-printf "Sample\tSerotype\tST\tadhP\tpheS\tatr\tglnA\tsdhA\tglcK\ttkt\tPBP_Code(1A:2X)\tTET\tEC\tFQ\tOTHER\tALP\tSRR\tPILI\tHVGA\n" >> "$out_analysis"/TABLE_GBS_"$batch_name"_Typing_Results.txt
+printf "Sample\tSerotype\tST\tadhP\tpheS\tatr\tglnA\tsdhA\tglcK\ttkt\tPBP_1A\tPBP_2X\tTET\tEC\tFQ\tOTHER\tALPH\tSRR\tPILI\tHVGA\n" >> "$out_analysis"/TABLE_GBS_"$batch_name"_Typing_Results.txt
+printf "Sample,MLST,Serotype,PBP1A,PBP2X,23S1,23S3,CAT,ERMB,ERMT,ERMTR,RPOB1,RPOB2,RPOB3,RPOB4,GYRA,LSAC,LSAE,MEF,PARC,LNUB,TETL,TETM,TETO,HVGA,PI1,PI2A1,PI2A2,PI2B,SRR1,SRR2,ALP1REF,ALP23REF,ALPHAREF,RIBREF\n" >> "$out_analysis"/BIN_GBS_"$batch_name"_Typing_Results.txt
 
 ###Will search thru every file in the batch directory and check if it matches the following regexs: _L.*_R1_001.fastq and _L.*_R2_001.fastq###
 ###If both paired end fastq files are found then the full paths of each file will be written to the 'job-control.txt' file###
@@ -157,20 +158,15 @@ done
 ###Send the jobs out on the cluster with each sample running in parallel###
 qsub -sync y -q dbd.q -t 1-$(cat $out_jobCntrl/job-control.txt | wc -l) -cwd -o "$out_qsub" -e "$out_qsub" ./StrepLab-JanOw_GBS-Typer.sh $out_jobCntrl
 
-#printf "Sample\tSerotype\tST\tadhP\tpheS\tatr\tglnA\tsdhA\tglcK\ttkt\tPBP_Code(1A:2X)\tTET\tEC\tFQ\tOTHER\tALP\tSRR\tPILI\tHVGA\n" >> "$out_analysis"/TABLE_GBS_"$batch_name"_Typing_Results.txt
+
 ###Output the emm type/MLST/drug resistance data for this sample to it's results output file###
 while read -r line
 do
     batch_name=$(echo $line | awk -F" " '{print $1}' | awk -F"/" '{print $(NF-4)}')
     final_outDir=$(echo $line | awk -F" " '{print $5}')
     final_result_Dir=$(echo $line | awk -F" " '{print $4}')
-    #cat $final_outDir/TEMP_table_results.txt
-    #cat $final_outDir/TEMP_GBS_Typing_Results.txt
-    #cat $final_outDir/TEMP_newPBP_allele_info.txt
-
-    #cat $final_outDir/SAMPLE_Isolate__Typing_Results.txt >> $final_result_Dir/SAMPL_GBS_"$batch_name"_Typing_Results.txt
     cat $final_outDir/TABLE_Isolate_Typing_results.txt >> $final_result_Dir/TABLE_GBS_"$batch_name"_Typing_Results.txt
-    #cat $final_outDir/TEMP_newPBP_allele_info.txt >> $final_result_Dir/UPDATR_GBS_"$batch_name"_Typing_Results.txt
+    cat $final_outDir/BIN_Isolate_Typing_results.txt >> $final_result_Dir/BIN_GBS_"$batch_name"_Typing_Results.txt
     if [[ -e $final_outDir/TEMP_newPBP_allele_info.txt ]]
     then
     	cat $final_outDir/TEMP_newPBP_allele_info.txt >> $final_result_Dir/UPDATR_GBS_"$batch_name"_Typing_Results.txt

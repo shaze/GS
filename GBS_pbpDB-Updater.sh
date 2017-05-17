@@ -30,12 +30,13 @@ Ref_1A=$(ls $refSeq/*1A*.faa)
 Ref_2X=$(ls $refSeq/*2X*.faa)
 
 if [[ -e "$Ref_1A" && -e "$Ref_2X" ]]
+#if [[ -e "$Ref_2X" ]]
 then
-    echo "The PBP 1A reference database is: $Ref_1A"
+    echo "The PBP 2X reference database is: $Ref_2X"
     echo "The PBP 2X reference database is: $Ref_2X"
 else
     echo "At least one of the PBP reference databases are not in the correct format or don't exist."
-    echo "Make sure they are in the $refSeq directory and have the correct naming format."
+    echo "Make sure it's in the $refSeq directory and has the correct naming format."
     echo "More specifically, each PBP sequence must contain '1A' or '2X' and have the '.faa' extension."
     exit 1
 fi
@@ -69,7 +70,6 @@ else
 fi
 
 eval refSeq=$refSeq
-eval pbp1A=$pbp1A
 eval pbp2X=$pbp2X
 eval update_PBP=$update_PBP
 eval table_out=$table_out
@@ -95,16 +95,17 @@ blastTyper () {
         pbpStop="yes"
     fi
 
-    isBlastDB=$(ls "$refSeq"/"$pbpName"_prot_blast_db*)
+    #isBlastDB=$(ls "$refSeq"/"$pbpName"_prot_blast_db*)
+    isBlastDB=$(ls "$refSeq"/Blast_bLactam_"$pbpName"_prot_DB*)
     if [[ "$pbpStop" == "no" ]]
     then
         if [[ -z "$isBlastDB" ]]
         then
             ### Make blast database
             makeblastdb -in "$2" -dbtype prot -out "$refSeq"/Blast_bLactam_"$pbpName"_prot_DB
-            blastp -db "$refSeq"/"$pbpName"_prot_blast_db -query "$1" -outfmt 6 -out "$SampleName"_blast-out_"$pbpName".txt
+            blastp -db "$refSeq"/Blast_bLactam_"$pbpName"_prot_DB -query "$1" -outfmt 6 -out "$SampleName"_blast-out_"$pbpName".txt
         else
-            blastp -db "$refSeq"/"$pbpName"_prot_blast_db -query "$1" -outfmt 6 -out "$SampleName"_blast-out_"$pbpName".txt
+            blastp -db "$refSeq"/Blast_bLactam_"$pbpName"_prot_DB -query "$1" -outfmt 6 -out "$SampleName"_blast-out_"$pbpName".txt
         fi
 
         cat "$SampleName"_blast-out_"$pbpName".txt | sort -r -n -k12,12 -k3,3 -k4,4 | sed -n 1p > prot_best_blast.txt
@@ -144,7 +145,7 @@ blastTyper () {
             ###Output the new allele to Final_newRef_Seq.faa and add it to the database###
             cat Single_newRef_Seq.faa >> "$2"
             echo "Remaking blast database"
-	    rm "$refSeq"/"$pbpName"_prot_blast_db*
+	    rm "$refSeq"/Blast_bLactam_"$pbpName"_prot_DB*
 	    makeblastdb -in "$2" -dbtype prot -out "$refSeq"/Blast_bLactam_"$pbpName"_prot_DB
             rm Single_newRef_Seq.faa
         fi
@@ -157,15 +158,18 @@ blastTyper () {
 	   samplName=$(echo "$3" | sed 's/PBP_//g')
            if [[ "$samplName" == "$lineName" ]]
            then
-	       pbp_out=$(echo "$line" | awk -F"\t" '{print $11}')
+	       pbp_out=$(echo "$line" | awk -F"\t" '{print $22}')
                if [[ "$4" == "1A" ]]
                then
-		   pbp1A_out=$(echo $pbp_out | sed 's/NEW:/'$pbpAlleleID':/g')
-                   echo "$line" | awk -v var="$pbp1A_out" -v OFS='\t' '{$11=var; print }' >> "$5"_PRE
+	          pbp1A_out=$(echo $pbp_out | sed 's/NEW:/'$pbpAlleleID':/g')
+		  echo "New PBP 1A: $pbpAlleleID"
+                  #cho "$line" | awk -v var="$pbp1A_out" -v OFS='\t' '{$11=var; print }' >> "$5"_PRE
+		  echo "$line" | awk -v var="$pbpAlleleID" -v OFS='\t' '{$11=var; print }' >> "$5"_PRE
                elif [[ "$4" == "2X" ]]
+	       #if [[ "$4" == "2X" ]]
                then
-		   pbp2X_out=$(echo $pbp_out | sed 's/:NEW/:'$pbpAlleleID'/g')
-		   echo "$line" | awk -v var="$pbp2X_out" -v OFS='\t' '{$11=var; print }' >> "$5"_PRE
+		   pbp2X_out=$(echo $pbp_out | sed 's/NEW/'$pbpAlleleID'/g')
+		   echo "$line" | awk -v var="$pbpAlleleID" -v OFS='\t' '{$12=var; print }' >> "$5"_PRE
                fi
            else
                echo "$line" >> "$5"_PRE
@@ -194,6 +198,7 @@ do
     then
         blastTyper "$pbpPath" "$Ref_1A" "$sampleID" "$pbpAllele" "$table_out"
     elif [[ "$pbpAllele" == "2X" ]]
+    #if [[ "$pbpAllele" == "2X" ]]
     then
         blastTyper "$pbpPath" "$Ref_2X" "$sampleID" "$pbpAllele" "$table_out"
     fi
