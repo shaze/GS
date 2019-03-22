@@ -138,7 +138,7 @@ open(my $bh,'>',$BIN_surf_out) or die "Could not open file '$BIN_surf_out' $!";
 my @Bin_Feat_arr = (0) x 11;
 #print $fh "Feature_Group\tTarget\n";
 my $outNameFEAT = "SURF_".$outName;
-system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $outNameFEAT --log --save_scores --min_coverage 99.9 --max_divergence 8 --gene_db $protein_DB");
+system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $outNameFEAT --log --save_scores --min_coverage 99.0 --max_divergence 8 --gene_db $protein_DB");
 my @TEMP_SURF_fullgene = glob("SURF_*__fullgenes__*__results\.txt");
 my $SURF_full_name = $TEMP_SURF_fullgene[0];
 
@@ -207,7 +207,7 @@ while(<MYINPUTFILE>) {
     #print "$line\n";
     my @feat_fullgene;
     @feat_fullgene = split('\t',$line);
-    if ($feat_fullgene[5] >= 10) {
+    if ($feat_fullgene[5] >= 10 && $feat_fullgene[8] <= 8) {
         if ($feat_fullgene[3] =~ m/HVGA/) {
             $Bin_Feat_arr[0] = 1;
         }

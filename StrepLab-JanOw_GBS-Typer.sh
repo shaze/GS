@@ -61,12 +61,13 @@ GBS_Serotyper.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir/GBS_seroT_Gene
 ###Call GBS bLactam Resistances###
 module unload perl/5.22.1
 module load perl/5.16.1-MT
-PBP-Gene_Typer.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir/GBS_bLactam_Ref.fasta" -n "$just_name" -s GBS -p 1A,2X
+PBP-Gene_Typer.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir/GBS_bLactam_Ref.fasta" -n "$just_name" -s GBS -p 1A,2B,2X
 module unload perl/5.16.1-MT
 module load perl/5.22.1
 
 ###Call GBS Misc. Resistances###
 GBS_Res_Typer.pl -1 "$readPair_1" -2 "$readPair_2" -d "$allDB_dir" -r GBS_Res_Gene-DB_Final.fasta -n "$just_name"
+GBS_Target2MIC.pl TEMP_Res_Results.txt "$just_name" TEMP_pbpID_Results.txt
 
 ###Type Surface Proteins###
 GBS_Surface_Typer.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir" -p GBS_Surface_Gene-DB_Final.fasta -n "$just_name"
@@ -119,12 +120,20 @@ do
 done
 
 ###Resistance Targets###
+#while read -r line
+#do
+#    RES_targ=$(echo "$line" | cut -f2)
+#    printf "$RES_targ\t" >> "$tabl_out"
+#done < TEMP_Res_Results.txt
+#cat BIN_Res_Results.txt | sed 's/$/,/g' >> "$bin_out"
+
+###Resistance Targets###
 while read -r line
 do
-    RES_targ=$(echo "$line" | cut -f2)
-    printf "$RES_targ\t" >> "$tabl_out"
-done < TEMP_Res_Results.txt
-cat BIN_Res_Results.txt | sed 's/$/,/g' >> "$bin_out"
+    #RES_targ=$(echo "$line" | cut -f2)
+    #printf "$RES_targ\t" >> "$tabl_out"
+    printf "$line\t" | tr ',' '\t' >> "$tabl_out"
+done < RES-MIC_"$just_name"
 
 ###Surface Targets###
 while read -r line
@@ -134,8 +143,23 @@ do
 done < TEMP_Surface_Results.txt
 cat BIN_Surface_Results.txt >> "$bin_out"
 
-printf "\n" >> "$tabl_out"
-printf "\n" >> "$bin_out"
+if [[ -e $(echo ./velvet_output/*_Logfile.txt) ]]
+then
+    vel_metrics=$(echo ./velvet_output/*_Logfile.txt)
+    print "velvet metrics file: $vel_metrics\n";
+    velvetMetrics.pl -i "$vel_metrics";
+    line=$(cat velvet_qual_metrics.txt | tr ',' '\t')
+    printf "$line\t" >> "$tabl_out"
+
+    printf "$readPair_1\t" >> "$tabl_out";
+    pwd | xargs -I{} echo {}"/velvet_output/contigs.fa" >> "$tabl_out"
+else
+    printf "NA\tNA\tNA\tNA\t$readPair_1\tNA\n" >> "$tabl_out"
+fi
+#printf "\n" >> "$tabl_out"
+
+#printf "\n" >> "$tabl_out"
+#printf "\n" >> "$bin_out"
 
 
 ###Remove Temporary Files###

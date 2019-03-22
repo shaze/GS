@@ -117,7 +117,7 @@ print $fh "Matched_Allele\tMatch_Type\tSerotype\tAvgDepth\n";
 
 ###Detect GAS serotype sequence###
 my $sero_outName = "SERO_$outName";
-system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $sero_outName --log --save_scores --min_coverage 99.9 --max_divergence 7 --gene_db $sero_DB");
+system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $sero_outName --log --save_scores --min_coverage 99.0 --max_divergence 7 --gene_db $sero_DB");
 
 ###mpileup the 'SERO_.*.sorted.bam and create the called variants file with freebayes.
 opendir(DIR, ".") or die "Couldn't open directory for reading: $!";

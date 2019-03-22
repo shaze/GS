@@ -27,12 +27,14 @@ else
 fi
 
 Ref_1A=$(ls $refSeq/*1A*.faa)
+Ref_2B=$(ls $refSeq/*2B*.faa)
 Ref_2X=$(ls $refSeq/*2X*.faa)
 
-if [[ -e "$Ref_1A" && -e "$Ref_2X" ]]
+if [[ -e "$Ref_1A" && -e "$Ref_2B" && -e "$Ref_2X" ]]
 #if [[ -e "$Ref_2X" ]]
 then
-    echo "The PBP 2X reference database is: $Ref_2X"
+    echo "The PBP 1A reference database is: $Ref_1A"
+    echo "The PBP 2B reference database is: $Ref_2B"
     echo "The PBP 2X reference database is: $Ref_2X"
 else
     echo "At least one of the PBP reference databases are not in the correct format or don't exist."
@@ -165,11 +167,14 @@ blastTyper () {
 		  echo "New PBP 1A: $pbpAlleleID"
                   #cho "$line" | awk -v var="$pbp1A_out" -v OFS='\t' '{$11=var; print }' >> "$5"_PRE
 		  echo "$line" | awk -v var="$pbpAlleleID" -v OFS='\t' '{$11=var; print }' >> "$5"_PRE
-               elif [[ "$4" == "2X" ]]
-	       #if [[ "$4" == "2X" ]]
+               elif [[ "$4" == "2B" ]]
+               then
+                   pbp2B_out=$(echo $pbp_out | sed 's/NEW/'$pbpAlleleID'/g')
+                   echo "$line" | awk -v var="$pbpAlleleID" -v OFS='\t' '{$12=var; print }' >> "$5"_PRE
+	       elif [[ "$4" == "2X" ]]
                then
 		   pbp2X_out=$(echo $pbp_out | sed 's/NEW/'$pbpAlleleID'/g')
-		   echo "$line" | awk -v var="$pbpAlleleID" -v OFS='\t' '{$12=var; print }' >> "$5"_PRE
+		   echo "$line" | awk -v var="$pbpAlleleID" -v OFS='\t' '{$13=var; print }' >> "$5"_PRE
                fi
            else
                echo "$line" >> "$5"_PRE
@@ -197,6 +202,9 @@ do
     if [[ "$pbpAllele" == "1A" ]]
     then
         blastTyper "$pbpPath" "$Ref_1A" "$sampleID" "$pbpAllele" "$table_out"
+    elif [[ "$pbpAllele" == "2B" ]]
+    then
+        blastTyper "$pbpPath" "$Ref_2B" "$sampleID" "$pbpAllele" "$table_out"
     elif [[ "$pbpAllele" == "2X" ]]
     #if [[ "$pbpAllele" == "2X" ]]
     then
