@@ -7,7 +7,8 @@ use Data::Dumper;
 use Getopt::Std;
 use File::Copy qw(copy);
 use Env;
-use lib $ENV{MODULESHOME}."/init";
+#use lib $ENV{MODULESHOME}."/init";
+use lib "/usr/share/Modules/init/";
 use perl;
 
 ###MODULE LOAD###
@@ -413,13 +414,13 @@ while(<MYINPUTFILE>) {
             $Res_Targets{"23S1"} = "pos";
         } elsif ($miscR_fullgene[3] =~ m/23S3/) {
             $Res_Targets{"23S3"} = "pos";
-        } elsif ($miscR_fullgene[3] =~ m/RPOB1/) {
+        } elsif ($miscR_fullgene[3] =~ m/RPOBgbs-1/) {
             $Res_Targets{"RPOB1"} = "pos";
-        } elsif ($miscR_fullgene[3] =~ m/RPOBN/) {
+        } elsif ($miscR_fullgene[3] =~ m/RPOBgbs-2/) {
             $Res_Targets{"RPOB2"} = "pos";
-	} elsif ($miscR_fullgene[3] =~ m/RPOBN/) {
+	} elsif ($miscR_fullgene[3] =~ m/RPOBgbs-3/) {
 	    $Res_Targets{"RPOB3"} = "pos";
-	} elsif ($miscR_fullgene[3] =~ m/RPOBN/) {
+	} elsif ($miscR_fullgene[3] =~ m/RPOBgbs-4/) {
 	    $Res_Targets{"RPOB4"} = "pos";
 	}
     }
@@ -656,7 +657,7 @@ if ($Res_Targets{"23S3"} eq "pos") {
 ###Type Rifampicin Resistance Using 4 RPOB Targets###
 if ($Res_Targets{"RPOB1"} eq "pos") {
     my @RPOB_output;
-    my $RPOB_seq = freebayes_prior_fix($RES_bam, $res_DB,"16__RPOBgbs__RPOBgbs-1__16");
+    my $RPOB_seq = freebayes_prior_fix($RES_bam, $res_DB,"16__RPOBgbs1__RPOBgbs-1__16");
     my $RPOB_aaSeq = sixFrame_Translate($RPOB_seq,1);
     my $RPOB_aaRef = "FGSSQLSQFMDQHNPLSELSHKRRLSALGPGGL";
     print "RPOB1 sequence: $RPOB_seq || $RPOB_aaSeq\n";
@@ -685,7 +686,7 @@ if ($Res_Targets{"RPOB1"} eq "pos") {
 
 if ($Res_Targets{"RPOB2"} eq "pos") {
     my @RPOB_output;
-    my $RPOB_seq = freebayes_prior_fix($RES_bam, $res_DB,"17__RPOBgbs__RPOBgbs-2__17");
+    my $RPOB_seq = freebayes_prior_fix($RES_bam, $res_DB,"17__RPOBgbs2__RPOBgbs-2__17");
     my $RPOB_aaSeq = sixFrame_Translate($RPOB_seq,1);
     my $RPOB_aaRef = "VSQLVRSPGV";
     print "RPOB2 sequence: $RPOB_seq || $RPOB_aaSeq\n";
@@ -714,7 +715,7 @@ if ($Res_Targets{"RPOB2"} eq "pos") {
 
 if ($Res_Targets{"RPOB3"} eq "pos") {
     my @RPOB_output;
-    my $RPOB_seq = freebayes_prior_fix($RES_bam, $res_DB,"18__RPOBgbs__RPOBgbs-3__18");
+    my $RPOB_seq = freebayes_prior_fix($RES_bam, $res_DB,"18__RPOBgbs3__RPOBgbs-3__18");
     my $RPOB_aaSeq = sixFrame_Translate($RPOB_seq,1);
     my $RPOB_aaRef = "FTVAQANSKLNEDGTFAEEIVMGRHQGNNQEFPSSI";
     print "RPOB3 sequence: $RPOB_seq || $RPOB_aaSeq\n";
@@ -743,7 +744,7 @@ if ($Res_Targets{"RPOB3"} eq "pos") {
 
 if ($Res_Targets{"RPOB4"} eq "pos") {
     my @RPOB_output;
-    my $RPOB_seq = freebayes_prior_fix($RES_bam, $res_DB,"19__RPOBgbs__RPOBgbs-4__19");
+    my $RPOB_seq = freebayes_prior_fix($RES_bam, $res_DB,"19__RPOBgbs4__RPOBgbs-4__19");
     my $RPOB_aaSeq = sixFrame_Translate($RPOB_seq,1);
     my $RPOB_aaRef = "LIDPKAPYVGT";
     print "RPOB4 sequence: $RPOB_seq || $RPOB_aaSeq\n";

@@ -167,10 +167,11 @@ do
     final_outDir=$(echo $line | awk -F" " '{print $5}')
     final_result_Dir=$(echo $line | awk -F" " '{print $4}')
     cat $final_outDir/TABLE_Isolate_Typing_results.txt >> $final_result_Dir/TABLE_GBS_"$batch_name"_Typing_Results.txt
+    rm $final_outDir/TABLE_Isolate_Typing_results.txt
     cat $final_outDir/BIN_Isolate_Typing_results.txt >> $final_result_Dir/BIN_GBS_"$batch_name"_Typing_Results.txt
-    if [[ -e $final_outDir/TEMP_newPBP_allele_info.txt ]]
+    if [[ -e $final_outDir/newPBP_allele_info.txt ]]
     then
-    	cat $final_outDir/TEMP_newPBP_allele_info.txt >> $final_result_Dir/UPDATR_GBS_"$batch_name"_Typing_Results.txt
+    	cat $final_outDir/newPBP_allele_info.txt >> $final_result_Dir/UPDATR_GBS_"$batch_name"_Typing_Results.txt
     fi
 done < $out_jobCntrl/job-control.txt
 
