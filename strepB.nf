@@ -51,7 +51,7 @@ process fastQC {
     output:
       set val(base), file("*/*html") into qc_ch
       file ("*/*{zip,html}") into fastqc_results_ch
-    publishDir "${params.out_dir}/${base}/qc_reports", mode: 'copy', overwrite: true, pattern: "*html"    
+    publishDir "${params.out_dir}/${base}/qc_reports", mode: 'copy'   
     script:
     """
      mkdir ./${base}_R1_qc ./${base}_R2_qc

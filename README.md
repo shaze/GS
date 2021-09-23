@@ -17,9 +17,9 @@ Run
 You need the following three parameters (defaults are given in square brackets -- if you omit the parameter the default is used)
 
 * `batch_dir` : the name of the directory containing the read pair files. There must be
-  exactly two files per sample, named appropriately ["/dataC/CRDM/testingreads_gbs/191206_M02143"]
+  exactly two files per sample, named appropriately [`/dataC/CRDM/testingreads_gbs/191206_M02143`]
 * `out_dir`: the name of the output directory where data should go ["output"]
-* `allDB_dir`: the name of the database directory
+* `allDB_dir`: the name of the database directory [`/dataC/CRDM/GBS_Scripts_Reference/GBS_Reference_DB`]
 * `max_forks`: a parameter limiting the parallelism. Essentially only this number of samples are allowed to be in the first phase of the workflow at the same time and acts as a throttle (there will in general be more than this number of processes happening in parallel as this throttles only the number of samples being processed in the first phase not the total work being done. The default is 10 --  the reason for this throttle is not so much to limit the number of jobs running (since you can rely on the scheduler to do this sensibly) but that although these files are not huge if a lot of work is being done in parallel the I/O performance can suffer. Experiment so that you can get things done quickly without making everyone else hate you.
 
 
@@ -45,6 +45,25 @@ nextflow run shaze/GS/strepB.nf  --batch_dir NAMEOFINPUTDIR --out_dir NAMEOFOUTP
 
 ```
 
+A typical run might be
+
+```
+
+nextflow run shaze/GS/strepB.nf  --batch_dir august_data --out_dir /dataC/archive/august
+                        
+
+```
+
+This takes that data from `august_data` and puts the results in `/dataC/archive/august` using the default parameters for the database and `max_forks`
+
+
+## Output
+
+The output directory contains
+* an Excel spreadsheet summarising the results
+* MultiQC reports
+* a directory for each sample contains a QC report and the Velvet contigs
+* a directory `new_mlst` with new MLST data
 
 
 
