@@ -3,12 +3,6 @@
 temp_path=$(pwd)
 export PATH=$PATH:$temp_path
 
-## -- begin embedded SGE options --
-read -a PARAM <<< $(/bin/sed -n ${SLURM_ARRAY_TASK_ID}p $1/job-control.txt)
-## -- end embedded SGE options --
-
-###Load Modules###
-#. /usr/share/Modules/init/bash
 module load perl526
 module load ncbi-blast/2.12
 module load bioinf
@@ -25,11 +19,12 @@ prodigal -v
 ###created by 'StrepLab-JanOw_GAS-wrapr.sh' and pass that information, as arguments, to other programs responsible for various parts of strain
 ###characterization (MLST, emm type and antibiotic drug resistance prediction).
 
-readPair_1=${PARAM[0]}
-readPair_2=${PARAM[1]}
-allDB_dir=${PARAM[2]}
-batch_out=${PARAM[3]}
-sampl_out=${PARAM[4]}
+readPair_1=$1
+readPair_2=$2
+allDB_dir=$3
+batch_out=$4
+sampl_out=$5
+
 delete='true'
 
 ###Start Doing Stuff###
@@ -63,9 +58,11 @@ MLST_allele_checkr.pl "$out_nameMLST"__mlst__Streptococcus_agalactiae__results.t
 GBS_Serotyper.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir/GBS_seroT_Gene-DB_Final.fasta" -n "$just_name"
 
 ###Call GBS bLactam Resistances###
-
+module unload perl/5.22.1
+module load perl/5.16.1-MT
 PBP-Gene_Typer.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir/GBS_bLactam_Ref.fasta" -n "$just_name" -s GBS -p 1A,2B,2X
-
+module unload perl/5.16.1-MT
+module load perl/5.22.1
 
 ###Call GBS Misc. Resistances###
 GBS_Res_Typer.pl -1 "$readPair_1" -2 "$readPair_2" -d "$allDB_dir" -r GBS_Res_Gene-DB_Final.fasta -n "$just_name"
@@ -73,7 +70,6 @@ GBS_Target2MIC.pl TEMP_Res_Results.txt "$just_name" TEMP_pbpID_Results.txt
 
 ###Type Surface Proteins###
 GBS_Surface_Typer.pl -1 "$readPair_1" -2 "$readPair_2" -r "$allDB_dir" -p GBS_Surface_Gene-DB_Final.fasta -n "$just_name"
-
 
 ###Output the emm type/MLST/drug resistance data for this sample to it's results output file###
 tabl_out="TABLE_Isolate_Typing_results.txt"

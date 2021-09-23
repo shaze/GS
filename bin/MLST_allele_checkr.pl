@@ -1,0 +1,1 @@
+../../GAS_Scripts_Reference/MLST_allele_checkr.pl

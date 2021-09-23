@@ -1,0 +1,1 @@
+/dataC/CRDM/GBS_Scripts_Reference/GBS_Res_Typer.pl

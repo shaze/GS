@@ -157,10 +157,11 @@ done
 
 
 ###Send the jobs out on the cluster with each sample running in parallel###
-qsub -sync y -q dbd.q -t 1-$(cat $out_jobCntrl/job-control.txt | wc -l) -cwd -o "$out_qsub" -e "$out_qsub" ./StrepLab-JanOw_GBS-Typer.sh $out_jobCntrl
+echo sbatch --wait -p batch  --array 220-$(cat $out_jobCntrl/job-control.txt | wc -l)  -o "$out_qsub/slurm-%A-%a.out" -e "$out_qsub/slurm-%A-%a.err" ./StrepLab-JanOw_GBS-Typer.sh $out_jobCntrl >> /tmp/see
+sbatch --wait -p batch  --array 1-$(cat $out_jobCntrl/job-control.txt | wc -l)  -o "$out_qsub/slurm-%j.out" -e "$out_qsub/slurm-%j.err" ./StrepLab-JanOw_GBS-Typer.sh $out_jobCntrl
 
 
-###Output the emm type/MLST/drug resistance data for this sample to it's results output file###
+###Output the emm type/MLST/drug resistance data for this sample to its results output file###
 while read -r line
 do
     batch_name=$(echo $line | awk -F" " '{print $1}' | awk -F"/" '{print $(NF-4)}')

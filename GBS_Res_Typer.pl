@@ -272,8 +272,11 @@ sub extractFastaByID {
 sub freebayes_prior_fix {
     my ($bamFile, $refFile, $target) = @_;
     (my $samFile = $bamFile) =~ s/\.bam/\.sam/g;
+    print "Calling samtools view -h $bamFile > $samFile\n";
     system("samtools view -h $bamFile > $samFile");
+    print "*******   About to grep\n ";
     system("cat $samFile | grep -E \"^\@HD|^\@SQ.*$target|^\@PG\" > CHECK_target_seq.sam");
+    print "******* awk -F'\t' '\$3 == \"$target\" {print \$0}' $samFile >> CHECK_target_seq.sam\n";
     system("awk -F'\t' '\$3 == \"$target\" {print \$0}' $samFile >> CHECK_target_seq.sam");
     system("samtools view -bS CHECK_target_seq.sam > CHECK_target_seq.bam");
     system("samtools index CHECK_target_seq.bam CHECK_target_seq.bai");
@@ -311,10 +314,14 @@ my @Bin_Res_arr = (0) x 19;
 my $outNameRES = "RES_".$outName;
 my $out_nameARG = "ARG_".$outName;
 my $out_nameRESFI = "RESFI_".$outName;
+print "Calling srst2\n";
+print "srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $outNameRES --log --save_scores --min_coverage 99.9 --max_divergence 5 --gene_db $res_DB\n";
 system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $outNameRES --log --save_scores --min_coverage 99.9 --max_divergence 5 --gene_db $res_DB");
 ###Type ARG-ANNOT Resistance Genes###
+print "srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $out_nameARG --log --save_scores --min_coverage 70 --max_divergence 30 --gene_db $ref_dir/ARGannot_r1.fasta\n";
 system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $out_nameARG --log --save_scores --min_coverage 70 --max_divergence 30 --gene_db $ref_dir/ARGannot_r1.fasta");
 ###Type ResFinder Resistance Gene###
+print "srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $out_nameRESFI --log --save_scores --min_coverage 70 --max_divergence 30 --gene_db $ref_dir/ResFinder.fasta\n";
 system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $out_nameRESFI --log --save_scores --min_coverage 70 --max_divergence 30 --gene_db $ref_dir/ResFinder.fasta");
 #=cut
 
