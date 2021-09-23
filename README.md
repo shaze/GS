@@ -57,6 +57,8 @@ nextflow run shaze/GS/strepB.nf  --batch_dir august_data --out_dir /dataC/archiv
 
 This takes that data from `august_data` and puts the results in `/dataC/archive/august` using the default parameters for the database and `max_forks`
 
+You can run this from any directory. *If you are running on the Wits cluster please do not run from your home directory -- the output and intermediate files are very large and put pressure on our backup. Use your given project directory*.
+
 
 ## Output
 
@@ -65,6 +67,18 @@ The output directory contains
 * MultiQC reports
 * a directory for each sample contains a QC report and the Velvet contigs
 * a directory `new_mlst` with new MLST data
+
+
+## Cleaning up
+
+This script has lots of intermediate files and output files. As an example, a test data aset of 7GB led to 12GB of output data and another 43GB of intermediate files.  Nextflow uses the `work` directory to store all the intermediate files and this needs to be cleaned out but some care needs to be taken. By default both for efficiency reasons and to ensure that the `-resume` works cleanly, all the large output files are symbolically linked from the work directory rathr than copied. So if you just delete the work directory you will effectively delete your output.
+
+So, once you have run the workflow and are happy with the  results, please clean up. One way of doing this would be to do the following
+
+* run the workflow again with _exactly_ the same parameters but add `-resume --publish copy` (not single dash for the first, double dash for the second). This will then _copy_ all the output files from the `work` to the specified output directory. This may take a 2-3 minutes to run if your output files are large.
+* delete the work directory `/bin/rm -rf work`  (there are fancier ways of doing this but this work.
+
+
 
 
 

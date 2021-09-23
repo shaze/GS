@@ -215,7 +215,7 @@ process reportGlobal {
      file(newmlst) from new_mlst_ch.toList()
   output:
      file(rep_name)
-  publishDir "${params.out_dir}", mode: params.publish, overwrite: true
+  publishDir "${params.out_dir}", mode: 'copy', overwrite: true
   script:
       rep_name=new java.text.SimpleDateFormat("yyyy-MM-dd-HHmmss").format(new Date())+".xlsx"
       """
