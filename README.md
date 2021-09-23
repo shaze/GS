@@ -1,37 +1,54 @@
-#strep.nf
+# strepB.nf
 
-This is a work in progress of a Nextflow implementation of https://github.com/BenJamesMetcalf/GBS_Scripts_Reference
+This is a work in progress of a Nextflow implementation of `https://github.com/BenJamesMetcalf/GBS_Scripts_Reference`. The bioinformatics has not changed only the wrapping. Any credit due to Ben and Sopio -- errors are mine.
 
 
-# Instructions
+# Installing
 
+Run 
+
+`nextflow pull shaze/GBS`
+
+
+# Instructions for running
+
+
+## Workflow parameters
 You need the following three parameters (defaults are given in square brackets -- if you omit the parameter the default is used)
 
 * `batch_dir` : the name of the directory containing the read pair files. There must be
   exactly two files per sample, named appropriately ["/dataC/CRDM/testingreads_gbs/191206_M02143"]
 * `out_dir`: the name of the output directory where data should go ["output"]
 * `allDB_dir`: the name of the database directory
-* `max_forks`: a parameter limiting the parallelism. Essentially only this number of samples are allowed to be in the first phase of the workflow at the same time and acts as a throttle (there will in general be more than this number of processes happening in parallel as this throttles only the number of samples being processed in the first phase not the total work being done. The default is 10 --  the reason for this throttle is not so much to limit the number of jobs running (since you can rely on the scheduler to do this sensibly) but that although these files are not huge if a lot of work is being done in parallel the I/O perforamnce can suffer.
+* `max_forks`: a parameter limiting the parallelism. Essentially only this number of samples are allowed to be in the first phase of the workflow at the same time and acts as a throttle (there will in general be more than this number of processes happening in parallel as this throttles only the number of samples being processed in the first phase not the total work being done. The default is 10 --  the reason for this throttle is not so much to limit the number of jobs running (since you can rely on the scheduler to do this sensibly) but that although these files are not huge if a lot of work is being done in parallel the I/O performance can suffer. Experiment so that you can get things done quickly without making everyone else hate you.
 
 
-```
 
-nextflow run strepB.nf  --batch_dir NAMEOFINPUTDIR --out_dir NAMEOFOUTPUTDIR --allDB_dir DBdirectory --max_forks  NUMBER
-                        
 
-```
-
-You do not have to be in the same directory as the the Nextflow script (and in fact it's bad practice to do so) to run. Just use the 
-
+## Additional Nextflow parameters
 
 In addition there are two _Nextflow_ parameters that you can use (especially the first). Not that for the above parameters you used two dashes `--` while for the ones below you use only one dash `-`: this is very important.
 
-* `-profile slurm`: this causes each job to be submitted to the job scheduler and improves your parallelism. This is highly desirable.
+* `-profile slurm`: this causes each job to be submitted to the job scheduler and improves your parallelism. This is highly desirable.  The workflow provides a high degree of parallelism -- using `max_forks` of 37 with 37 input pairs, the workflow took  23 minutes of elapsed time (32 CPU hours running)
 
 * `-profile resume`: if something crashed in a run for a reason other than an error in the workflow (say the computer's power went down) then you can use this to pick up execution from the point that execution failed (obviously if there's a bug in the workflow or a problem with the data the workflow will just crash again)
 
 
-# Creating a config file
+# Running the `GBS_Scripts_Reference` workflow
+
+
+
+```
+
+nextflow run shaze/GS/strepB.nf  --batch_dir NAMEOFINPUTDIR --out_dir NAMEOFOUTPUTDIR --allDB_dir DBdirectory --max_forks  NUMBER
+                        
+
+```
+
+
+
+
+## Creating a config file
 
 You can create a config file like this (say `demo.config`) and then run your code 
 
