@@ -1,6 +1,7 @@
 #!/bin/bash -l
 
 
+params.publish="link"
 
 max_forks = params.max_forks
 db_dir = params.allDB_dir
@@ -51,7 +52,7 @@ process fastQC {
     output:
       set val(base), file("*/*html") into qc_ch
       file ("*/*{zip,html}") into fastqc_results_ch
-    publishDir "${params.out_dir}/${base}/qc_reports", mode: 'copy'   
+    publishDir "${params.out_dir}/${base}/qc_reports", mode: params.publish, overwrite: true
     script:
     """
      mkdir ./${base}_R1_qc ./${base}_R2_qc
@@ -84,7 +85,7 @@ process MLSTalleleChecker {
       file(strep_agal)
    output:
       file ("${base}_new_mlst.txt") optional true into new_mlst_ch
-      publishDir "${params.out_dir}/new_mlst/", copy:true, overwrite:true
+      publishDir "${params.out_dir}/new_mlst/", mode:params.publish, overwrite:true
    script:
    """
     echo $bam
@@ -123,7 +124,7 @@ process pbpGeneTyper {
       set val(base), file("TEMP_pbpID_Results.txt"), file(velvet_output) into pbp_res1_ch
       file("${base}_newPBP_allele_info.txt") optional true into newpbp_ch
       file("velvet_output")
-   publishDir "${params.out_dir}/${base}/", overwrite: true, pattern: "velvet_output"
+   publishDir "${params.out_dir}/${base}/", mode: params.publish, overwrite: true, pattern: "velvet_output"
    script:
    /* The trim files are actually used but PBP-Gene_Typer constructs the name from the raw file names */
    """     
@@ -214,7 +215,7 @@ process reportGlobal {
      file(newmlst) from new_mlst_ch.toList()
   output:
      file(rep_name)
-  publishDir "${params.out_dir}"
+  publishDir "${params.out_dir}", mode: params.publish, overwrite: true
   script:
       rep_name=new java.text.SimpleDateFormat("yyyy-MM-dd-HHmmss").format(new Date())+".xlsx"
       """
@@ -230,7 +231,7 @@ process multiqc {
     output:
     file "multiqc_report.html" into multiqc_report
     file "multiqc_data"
-    publishDir "${params.out_dir}"
+    publishDir "${params.out_dir}", mode: params.publish, overwrite: true
     script:
     """
     multiqc .
