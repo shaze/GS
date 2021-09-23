@@ -30,7 +30,7 @@ You need the following three parameters (defaults are given in square brackets -
 
 In addition there are two _Nextflow_ parameters that you can use (especially the first). Not that for the above parameters you used two dashes `--` while for the ones below you use only one dash `-`: this is very important.
 
-* `-profile slurm`: this causes each job to be submitted to the job scheduler and improves your parallelism. This is highly desirable.  The workflow provides a high degree of parallelism -- using `max_forks` of 37 with 37 input pairs, the workflow took  23 minutes of elapsed time (32 CPU hours running)
+* `-profile slurm`: this causes each job to be submitted to the job scheduler and improves your parallelism. This is highly desirable.  The workflow provides a high degree of parallelism -- using `max_forks` of 37 with 37 input pairs, the workflow took  23 minutes of elapsed time (32 CPU hours running).  If you do *not* use this option, Nextflow executes this job on the computer that you happen to be running on.  Nextflow detects the number of actual cores you have and parallelises sensibly as much as possible (a minumum number of four cores is required).
 
 * `-profile resume`: if something crashed in a run for a reason other than an error in the workflow (say the computer's power went down) then you can use this to pick up execution from the point that execution failed (obviously if there's a bug in the workflow or a problem with the data the workflow will just crash again)
 
@@ -50,12 +50,12 @@ A typical run might be
 
 ```
 
-nextflow run shaze/GS/strepB.nf  --batch_dir august_data --out_dir /dataC/archive/august
+nextflow run shaze/GS/strepB.nf  --batch_dir august_data --out_dir /dataC/archive/august -profile slurm
                         
 
 ```
 
-This takes that data from `august_data` and puts the results in `/dataC/archive/august` using the default parameters for the database and `max_forks`
+This takes that data from `august_data` and puts the results in `/dataC/archive/august` using the default parameters for the database and `max_forks`. It also says that jobs should be submitted to the cluster by the scheduler. 
 
 You can run this from any directory. *If you are running on the Wits cluster please do not run from your home directory -- the output and intermediate files are very large and put pressure on our backup. Use your given project directory*.
 
