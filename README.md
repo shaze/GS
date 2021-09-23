@@ -7,8 +7,9 @@ This is a work in progress of a Nextflow implementation of `https://github.com/B
 
 Run 
 
-`nextflow pull shaze/GBS`
+`nextflow pull shaze/GS`
 
+Note that if the workflow is updated when you run the workflow you will get a message like "NOTE: Your local project version looks outdated - a different revision is available in the remote repository". If you want to upgrade to the latest version do another `nextflow pull shaze/GS` 
 
 # Instructions for running
 
