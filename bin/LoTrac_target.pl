@@ -247,6 +247,9 @@ if (glob("prodigal_$outName*")) {
     print "Gene prediction has already been completed\n";
 } else {
     system("prodigal -c -f gff -i ./velvet_output/contigs.fa -a PRE_$outName.faa -o prodigal_$outName.gff -d PRE_$outName.fasta");
+    if ($? !=0) {
+        die "prodigal fails";
+    }
     `cat PRE_"$outName".faa | sed 's/ # .*//g' > prodigal_"$outName".faa`;
     `cat PRE_"$outName".fasta | sed 's/ # .*//g' > prodigal_"$outName".fna`;
     unlink("PRE_$outName.faa");
