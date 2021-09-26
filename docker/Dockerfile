@@ -14,7 +14,7 @@ RUN cpan -i XML::Parser::PerlSAX XML::DOM XML::Twig &&\
     cpan -i Encode::Locale File::Listing HTML::Entities HTML::HeadParser HTTP::Cookies HTTP::Date HTTP::Negotiate HTTP::Request HTTP::Request::Common HTTP::Response HTTP::Status LWP::MediaTypes Net::HTTP Test::Fatal Test::RequiresInternet URI::Escape WWW::RobotRules Test::Needs Try::Tiny LWP::MediaTypes URI URI::URL HTML::Tagset HTTP::Headers HTTP::Date IO::HTML && \
     cpan -i Term::ReadLine
     
-RUN cpan -i Data::Stag Graph::Directed Bio::SeqIO
+
 
 RUN apt-get -y update && \
     apt-get install -y apt-utils  &&\
@@ -22,6 +22,8 @@ RUN apt-get -y update && \
     ln -s /usr/bin/python2.7 /usr/bin/python2 && \
     rm -rf /var/lib/apt/lists/* \
     && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
+
+
 
 ENV LANG en_US.utf8
 
@@ -67,8 +69,9 @@ RUN wget https://github.com/BenLangmead/bowtie2/releases/download/v2.2.9/bowtie2
 
 RUN apt-get -y update && apt-get install -y samtools=1.10-3 velvet=1.2.10+dfsg1-7
 
-RUN apt-get -u autoremove  & /bin/rm -rf /root/*
+RUN apt-get -y install environment-modules=4.4.1-1
+
+RUN apt-get -y autoremove  & /bin/rm -rf /root/*
 
 
-#openjdk-11-jre-headless
      

@@ -5,6 +5,31 @@ This is a work in progress of a Nextflow implementation of `https://github.com/B
 
 # Installing
 
+
+## Essential pre-requirements
+
+To run this workflow you must have Java 8 or later and Nextflow installed. An example of doing this is
+
+```
+apt install openjdk-11-jre-headless
+curl -s https://get.nextflow.io | bash
+mv nextflow /usr/local/bin/
+chmod a+rx /usr/local/bin/nextflow
+```
+
+## Bioinformatics software requirements
+
+There is an extensive set of software requirements for this. You can either install manually or we suggest using our containerised image with all the necessary requirements. In this case you need only install either _docker_ or _singularity_ and use the `-profile docker` or `-profile singularity` option. If you can't do this or want to install your own versions you can use the `dockers/Dockerfile` file as a guide of what to install.
+
+To install Docker or Singularity requires root privileges. Generally, Docker is not available or recommended in shared computing environments like HPC clusters but Singularity is widely available: you do not have to be root in order to _run_ Singularity.
+
+You need to run Singularity 3 for this workflow (note the default Ubuntu version is Singularity 2). Instructions can be found here: https://sylabs.io/guides/3.0/user-guide/installation.html on how to do this (look for `Install the Debian/Ubuntu package using apt`). On RHEL deliverables, you can find it in the OSG repo.
+
+To install Docker (remember you either need Docker or singularity), on Ubuntu install `docker.io`. On RHEL, the package is `docker`.
+
+
+
+
 Run 
 
 `nextflow pull shaze/GS`
