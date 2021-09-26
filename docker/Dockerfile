@@ -69,7 +69,8 @@ RUN wget https://github.com/BenLangmead/bowtie2/releases/download/v2.2.9/bowtie2
 
 RUN apt-get -y update && apt-get install -y samtools=1.10-3 velvet=1.2.10+dfsg1-7
 
-RUN apt-get -y install environment-modules=4.4.1-1
+RUN apt-get -y install environment-modules=4.4.1-1 &&\
+    ln -s /usr/bin/python2.7 /usr/bin/python
 
 RUN apt-get -y autoremove  & /bin/rm -rf /root/*
 
