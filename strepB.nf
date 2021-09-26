@@ -1,19 +1,26 @@
 #!/bin/bash -l
 
 
-params.publish="link"
 
 max_forks = params.max_forks
 db_dir = params.allDB_dir
 
 db=file(db_dir)
+
+staged_batch_dir = file (params.batch_dir)
+
+
+
 strep_agal=file("$db_dir/Streptococcus_agalactiae.fasta")
 strep_agal_txt=file("$db_dir/sagalactiae.txt")
 sero_gene_db=file("$db_dir/GBS_seroT_Gene-DB_Final.fasta")
 lactam_db=file("$db_dir/GBS_bLactam_Ref.fasta")
-output_dir="output"
+output_dir="gbs_typing"
+suffix=params.suffix
 
-Channel.fromFilePairs("${params.batch_dir}/*_R{1,2}_001.fastq.gz").into { fqPairs1; fqPairs2; fqPairs3; fqPairs4;  fqPairs5 ; fqPairs6}
+
+Channel.fromFilePairs("${params.batch_dir}/*_R{1,2}_001*"+suffix)
+       .into { fqPairs1; fqPairs2; fqPairs3; fqPairs4;  fqPairs5 ; fqPairs6}
 
 
 process cutAdapt1 {
@@ -205,21 +212,22 @@ process reportSample {
 }
 
 
+/* These paths are required because they appear in the output report */
 
-abs_output = (new File(params.out_dir)).getCanonicalPath()
 
 process reportGlobal {
   input: 
      file(reps) from reports.toList()
      file(newpbps) from newpbp_ch.toList()
      file(newmlst) from new_mlst_ch.toList()
+     file(staged_batch_dir)
   output:
      file(rep_name)
   publishDir "${params.out_dir}", mode: 'copy', overwrite: true
   script:
       rep_name=new java.text.SimpleDateFormat("yyyy-MM-dd-HHmmss").format(new Date())+".xlsx"
       """
-      combined_report.py ${params.batch_dir}  $abs_output  $rep_name
+      combined_report.py $suffix ${params.batch_dir} ${params.out_dir}  $rep_name
       """
 }
 

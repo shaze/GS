@@ -21,9 +21,11 @@ You need the following three parameters (defaults are given in square brackets -
   exactly two files per sample, named appropriately [`/dataC/CRDM/testingreads_gbs/191206_M02143`]
 * `out_dir`: the name of the output directory where data should go ["output"]
 * `allDB_dir`: the name of the database directory [`/dataC/CRDM/GBS_Scripts_Reference/GBS_Reference_DB`]
-* `max_forks`: a parameter limiting the parallelism. Essentially only this number of samples are allowed to be in the first phase of the workflow at the same time and acts as a throttle (there will in general be more than this number of processes happening in parallel as this throttles only the number of samples being processed in the first phase not the total work being done. The default is 10 --  the reason for this throttle is not so much to limit the number of jobs running (since you can rely on the scheduler to do this sensibly) but that although these files are not huge if a lot of work is being done in parallel the I/O performance can suffer. Experiment so that you can get things done quickly without making everyone else hate you.
 
 
+*Important assumption* This workflow assumes that all input fastq files end with `_R1_001` or `_R2_001`, followed by a suffix. The default suffix is `fastq.gz`
+
+See advanced parameters below.
 
 
 ## Additional Nextflow parameters
@@ -80,6 +82,14 @@ So, once you have run the workflow and are happy with the  results, please clean
 
 But you may choose just to copy the files you want.
 
+
+## Advanced paramters
+
+* `max_forks`: a parameter limiting the parallelism. Essentially only this number of samples are allowed to be in the first phase of the workflow at the same time and acts as a throttle (there will in general be more than this number of processes happening in parallel as this throttles only the number of samples being processed in the first phase not the total work being done. The default is 10 --  the reason for this throttle is not so much to limit the number of jobs running (since you can rely on the scheduler to do this sensibly) but that although these files are not huge if a lot of work is being done in parallel the I/O performance can suffer. Experiment so that you can get things done quickly without making everyone else hate you.
+
+* `publish`: default is `link`. Most output files are symbolically linked from the work directory to the output directory. This is more efficient computationally but when the work directory is deleted your output directory is removed. Re-running the workflow with `-resume --publish copy` will copy the output files across
+
+* `suffix`: default is `fastq.gz`. The workflow assumes that all the fastq files end with this suffix. If you have a different suffix, then use this parameter, for example `--suffix fq.gz`. All input files must have the same suffix.
 
 
 ## Creating a config file
