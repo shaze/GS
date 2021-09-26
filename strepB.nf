@@ -123,6 +123,7 @@ fqPairs4.join(trimmed_ch2)
 
 
 process pbpGeneTyper {
+   cpus 12	     
    input:
      set val(base),  file(raw1), file(raw2), file(trim1), file(trim2) from pbp_inputs_ch
      file(db)
@@ -135,8 +136,7 @@ process pbpGeneTyper {
    script:
    /* The trim files are actually used but PBP-Gene_Typer constructs the name from the raw file names */
    """     
-   which perl
-   which makeblastdb
+   export OMP_NUM_THREADS=12
    PBP-Gene_Typer.pl -1 $raw1 -2 $raw2 -r $db/GBS_bLactam_Ref.fasta -n $base  -s GBS -p 1A,2B,2X
    if [ -e newPBP_allele_info.txt ]; then
       cp newPBP_allele_info.txt ${base}_newPBP_allele_info.txt
