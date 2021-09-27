@@ -62,7 +62,8 @@ RUN  wget https://github.com/arq5x/bedtools2/releases/download/v2.30.0/bedtools.
 
 
 RUN  wget https://github.com/freebayes/freebayes/releases/download/v1.3.4/freebayes-1.3.4-linux-static-AMD64.gz &&\
-     mv freebayes-1.3.4-linux-static-AMD64.gz /usr/local/bin/freebayes && \
+     gunzip  freebayes-1.3.4-linux-static-AMD64.gz &&\
+     mv freebayes-1.3.4-linux-static-AMD64 /usr/local/bin/freebayes && \
      chmod a+x /usr/local/bin/freebayes 
 
 
@@ -82,9 +83,14 @@ RUN  cpan -i  Bio::SeqIO
 
 RUN apt install openjdk-11-jre-headless  -y
 
+RUN apt -y install vcftools=0.1.16-1build1
 
 RUN apt-get -y autoremove  & /bin/rm -rf /root/*
 
+# We need to fix a small bug in srst2 which affects alleles that have
+# parentheses in them. A grep fails causing srst2 to fail silently
+COPY srst2.patch /root/srst2.patch
+RUN patch /usr/local/lib/python2.7/dist-packages/srst2/srst2.py srst2.patch
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9  1
 
      

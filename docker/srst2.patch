@@ -1,0 +1,4 @@
+1502c1502
+< 				header_string = os.popen(" ".join(["grep",allele,fasta]))
+---
+> 				header_string = os.popen(" ".join(["grep",'"%s"'%allele,fasta]))
