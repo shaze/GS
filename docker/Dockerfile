@@ -90,7 +90,7 @@ RUN apt-get -y autoremove  & /bin/rm -rf /root/*
 # We need to fix a small bug in srst2 which affects alleles that have
 # parentheses in them. A grep fails causing srst2 to fail silently
 COPY srst2.patch /root/srst2.patch
-RUN patch /usr/local/lib/python2.7/dist-packages/srst2/srst2.py srst2.patch
+RUN patch /usr/local/lib/python2.7/dist-packages/srst2/srst2.py /root/srst2.patch
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9  1
 
      
