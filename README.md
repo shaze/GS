@@ -3,21 +3,21 @@
 This is a work in progress of a Nextflow implementation of `https://github.com/BenJamesMetcalf/GBS_Scripts_Reference`. The bioinformatics has not changed only the wrapping. Any credit due to Ben and Sopio -- errors are mine.
 
 
-# Installing
+# 1. Installing
 
 
-## Essential pre-requirements
+## 1.1 Essential pre-requirements
 
 To run this workflow you must have Java 8 or later and Nextflow installed. An example of doing this is
 
 ```
-apt install openjdk-11-jre-headless
+sudo apt install openjdk-11-jre-headless
 curl -s https://get.nextflow.io | bash
-mv nextflow /usr/local/bin/
-chmod a+rx /usr/local/bin/nextflow
+sudo mv nextflow /usr/local/bin/
+sudo chmod a+rx /usr/local/bin/nextflow
 ```
 
-## Bioinformatics software requirements
+## 1.2 Bioinformatics software requirements
 
 There is an extensive set of software requirements for this. You can either install manually or we suggest using our containerised image with all the necessary requirements. In this case you need only install either _docker_ or _singularity_ and use the `-profile docker` or `-profile singularity` option. If you can't do this or want to install your own versions you can use the `dockers/Dockerfile` file as a guide of what to install.
 
@@ -28,18 +28,18 @@ You need to run Singularity 3 for this workflow (note the default Ubuntu version
 To install Docker (remember you either need Docker or singularity), on Ubuntu install `docker.io`. On RHEL, the package is `docker`.
 
 
+## 1.3 Installing the workflow itself
 
-
-Run 
+This takes one line
 
 `nextflow pull shaze/GS`
 
 Note that if the workflow is updated when you run the workflow you will get a message like "NOTE: Your local project version looks outdated - a different revision is available in the remote repository". If you want to upgrade to the latest version do another `nextflow pull shaze/GS` 
 
-# Instructions for running
+# 2. Instructions for running
 
 
-## Workflow parameters
+## 2.1 Workflow parameters
 You need the following three parameters (defaults are given in square brackets -- if you omit the parameter the default is used)
 
 * `batch_dir` : the name of the directory containing the read pair files. There must be
@@ -53,7 +53,7 @@ You need the following three parameters (defaults are given in square brackets -
 See advanced parameters below.
 
 
-## Additional Nextflow parameters
+## 2.2 Additional Nextflow parameters
 
 In addition there are two _Nextflow_ parameters that you can use (especially the first). Not that for the above parameters you used two dashes `--` while for the ones below you use only one dash `-`: this is very important.
 
@@ -62,7 +62,7 @@ In addition there are two _Nextflow_ parameters that you can use (especially the
 * `-profile resume`: if something crashed in a run for a reason other than an error in the workflow (say the computer's power went down) then you can use this to pick up execution from the point that execution failed (obviously if there's a bug in the workflow or a problem with the data the workflow will just crash again)
 
 
-# Running the `GBS_Scripts_Reference` workflow
+# 3. Running the `GBS_Scripts_Reference` workflow
 
 
 
@@ -96,7 +96,7 @@ The output directory contains
 * a directory `new_mlst` with new MLST data
 
 
-## Cleaning up
+#4. Cleaning up
 
 This script has lots of intermediate files and output files. As an example, a test data aset of 7GB led to 12GB of output data and another 43GB of intermediate files.  Nextflow uses the `work` directory to store all the intermediate files and this needs to be cleaned out but some care needs to be taken. By default both for efficiency reasons and to ensure that the `-resume` works cleanly, all the large output files are symbolically linked from the work directory rathr than copied. So if you just delete the work directory you will effectively delete your output.
 
@@ -108,7 +108,7 @@ So, once you have run the workflow and are happy with the  results, please clean
 But you may choose just to copy the files you want.
 
 
-## Advanced paramters
+#5.  Advanced paramters
 
 * `max_forks`: a parameter limiting the parallelism. Essentially only this number of samples are allowed to be in the first phase of the workflow at the same time and acts as a throttle (there will in general be more than this number of processes happening in parallel as this throttles only the number of samples being processed in the first phase not the total work being done. The default is 10 --  the reason for this throttle is not so much to limit the number of jobs running (since you can rely on the scheduler to do this sensibly) but that although these files are not huge if a lot of work is being done in parallel the I/O performance can suffer. Experiment so that you can get things done quickly without making everyone else hate you.
 

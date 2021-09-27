@@ -10,6 +10,11 @@ RUN apt-get -y update && apt-get -y install expat emacs-nox libexpat1-dev libxml
 
 ENV PERL5LIB=/usr/share/modules/init
 
+
+# This and the cpan at the end is more complex than it needs to be in order
+# to try to keep the container size down. You could probably avoid all of this
+# and the cpan below by doing an apt-get install of bioperl but that brings
+# in numerous packages we don't need and this container is big anyway
 RUN cpan -i XML::Parser::PerlSAX XML::DOM XML::Twig &&\
     cpan -i Encode::Locale File::Listing HTML::Entities HTML::HeadParser HTTP::Cookies HTTP::Date HTTP::Negotiate HTTP::Request HTTP::Request::Common HTTP::Response HTTP::Status LWP::MediaTypes Net::HTTP Test::Fatal Test::RequiresInternet URI::Escape WWW::RobotRules Test::Needs Try::Tiny LWP::MediaTypes URI URI::URL HTML::Tagset HTTP::Headers HTTP::Date IO::HTML && \
     cpan -i Term::ReadLine
@@ -71,6 +76,11 @@ RUN apt-get -y update && apt-get install -y samtools=1.10-3 velvet=1.2.10+dfsg1-
 
 RUN apt-get -y install environment-modules=4.4.1-1 &&\
     ln -s /usr/bin/python2.7 /usr/bin/python
+
+
+RUN  cpan -i  Bio::SeqIO
+
+RUN apt install openjdk-11-jre-headless  -y
 
 RUN apt-get -y autoremove  & /bin/rm -rf /root/*
 
