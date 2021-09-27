@@ -116,6 +116,7 @@ But you may choose just to copy the files you want.
 
 * `suffix`: default is `fastq.gz`. The workflow assumes that all the fastq files end with this suffix. If you have a different suffix, then use this parameter, for example `--suffix fq.gz`. All input files must have the same suffix.
 
+* `max_velvet_cpus`: how many CPUs should be used for Velvet. While Velvet has some parts that are parallelisable, a simple application of Amdahl's law shows that it is not worth allocating many threads to individual runs of Velvet. Since we are running Velvet on many different data sets, it makes more sense to run more of these independent jobs in parallel.
 
 ## Creating a config file
 
