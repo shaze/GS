@@ -82,7 +82,9 @@ RUN  cpan -i  Bio::SeqIO
 
 RUN apt install openjdk-11-jre-headless  -y
 
+
 RUN apt-get -y autoremove  & /bin/rm -rf /root/*
 
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9  1
 
      
