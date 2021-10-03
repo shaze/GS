@@ -297,9 +297,14 @@ foreach (@query_names) {
     ###OPEN 'EXTRACT_$query_name_target.fasta' FOR APPENDING (CHECK FOR FAILURES)
     open ( my $exOUT, ">>", $extract_out ) or die "Could not open file $extract_out: $!";
     print $exOUT "Complete $query_name Gene Sequence:\n";
-
     my $query_seq = extractFastaByID($query_name,$query);
     my $query_length = fasta_seq_length($query_seq);
+    if ($query_length<10) {
+	print "Query sequence found <$query_seq> is problematic\n";
+	`touch BAD_SEQ"`;
+	`/bin/rm -f *fasta`;
+	exit;
+    }
     open ( my $qOUT, ">", 'TEMP_query_sequence.fna' ) or die "Could not open file TEMP_query_sequence.fna: $!";
     print $qOUT $query_seq;
     close $qOUT;
