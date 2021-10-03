@@ -280,7 +280,7 @@ process reportGlobal {
      file(newpbps) from newpbp_ch.toList()
      file(newmlst) from new_mlst_ch.toList()
      file(staged_batch_dir)
-     val low_cov from low_coverage_ch.mix (query_length_prob_ch).map { [it[0]+" "+it[1] }.ifEmpty("None").toList()
+     val low_cov from low_coverage_ch.mix (query_length_prob_ch).map { it[0]+"-"+it[1] }.ifEmpty("None").toList()
   output:
      file(rep_name)
   publishDir "${params.out_dir}", mode: 'copy', overwrite: true

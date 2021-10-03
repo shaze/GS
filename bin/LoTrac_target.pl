@@ -246,6 +246,7 @@ print "Beginning Prodigal\n";
 if (glob("prodigal_$outName*")) {
     print "Gene prediction has already been completed\n";
 } else {
+    print("prodigal -c -f gff -i ./velvet_output/contigs.fa -a PRE_$outName.faa -o prodigal_$outName.gff -d PRE_$outName.fasta\n");
     system("prodigal -c -f gff -i ./velvet_output/contigs.fa -a PRE_$outName.faa -o prodigal_$outName.gff -d PRE_$outName.fasta");
     if ($? !=0) {
         die "prodigal fails";
@@ -254,6 +255,12 @@ if (glob("prodigal_$outName*")) {
     `cat PRE_"$outName".fasta | sed 's/ # .*//g' > prodigal_"$outName".fna`;
     unlink("PRE_$outName.faa");
     unlink("PRE_$outName.fasta");
+}
+
+if ((-s "prodigal_${outName}.fna") < 20) {
+	`touch BAD_SEQ`;
+	`/bin/rm -f *fasta`;
+	exit;
 }
 
 print "Create a blast database using the predicted genes obtained from Prodigal\n";
@@ -299,9 +306,10 @@ foreach (@query_names) {
     print $exOUT "Complete $query_name Gene Sequence:\n";
     my $query_seq = extractFastaByID($query_name,$query);
     my $query_length = fasta_seq_length($query_seq);
+    print "Query is $query_seq\n";
     if ($query_length<10) {
-	print "Query sequence found <$query_seq> is problematic\n";
-	`touch BAD_SEQ"`;
+	 print "Query sequence found <$query_seq> is problematic\n";
+	`touch BAD_SEQ`;
 	`/bin/rm -f *fasta`;
 	exit;
     }
