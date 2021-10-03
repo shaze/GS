@@ -24,12 +24,14 @@ while(<MYINPUTFILE>) {
     #next if $. < 2;
     my $line = $_;
     chomp($line);
+    $line =~ s/,/;/;
     #print "$line\n";
     my @res_arr;
     @res_arr = split('\t',$line);
     $Res_hash{$res_arr[0]} = $res_arr[1];
 }
 close MYINPUTFILE;
+
 
 my $PBP_full_name = $ARGV[2];
 my $pbp2X = "NA";

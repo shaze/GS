@@ -71,7 +71,7 @@ process fastQC {
 
 
 process srstP {
-    maxForks max_forks
+    maxForks 2*max_forks+2 
     cpus 4
     input:
       set val(base), file(pair) from fqPairs2

@@ -26,7 +26,7 @@ for i, t in enumerate(table_data):
     fq = os.path.join(batch_dir,sample)+"_R1_001."+suffix
     curr_line[-2]=fq
     # makes assumptions about the input format
-    
+
 table = pd.DataFrame(table_data,columns=table_heads)
 
 
@@ -47,7 +47,7 @@ for p in pbp:
 if len(plist)==0: plist=[["---None---", "---None---"]]
 pdf = pd.DataFrame(plist,columns=["Sequence","Allele"])
 
-print(low_cov)
+
 low_f = pd.DataFrame(low_cov,columns=["Sample"])
 
 outf:str=sys.argv[4]
