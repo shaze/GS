@@ -217,8 +217,13 @@ sub extractFastaByID {
 ##Start Doing Stuff##
 chdir "$outDir";
 ###Preprocess with Cutadapt###
-my $fastq1_trimd = "cutadapt_".$outName."_S1_L001_R1_001.fastq";
-my $fastq2_trimd = "cutadapt_".$outName."_S1_L001_R2_001.fastq";
+my $fastq1_trimd = "cutadapt_${fastq1}";
+my $fastq2_trimd = "cutadapt_${fastq2}";
+$fastq1_trimd =~ s/.gz//;
+$fastq2_trimd =~ s/.gz//;
+
+print "$fastq1_trimd\n";
+
 if( -e $fastq1_trimd) {
     print "Fastq files have already been preprocessed\n";
 } else {

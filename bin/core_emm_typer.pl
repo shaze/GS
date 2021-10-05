@@ -1,8 +1,16 @@
 #! /bin/env perl
 
 
-my $emm_DB=$ARGV[1];
-my $outName=$ARGV[2];
+my $emm_DB=$ARGV[0];
+print "emm_DB=$emm_DB\n";
+my $outName=$ARGV[1];
+chomp($emm_DB);
+
+
+my $emmType_output = "${outName}_emm_type_results.txt";
+open(my $fh,'>',$emmType_output) or die "Could not open file '$emmType_output' $!";
+print $fh "Sample_Name\temm_Type\temm_Seq\tPercent_Identity\tMatch_Length\n";
+
 
 ###Get the best blast hit by sorting the blast output by bit score, then % ID, then alignment length and select the first hit as the best match.###
 my $frwd_bestHit = `cat contig-vs-frwd_nucl.txt | sort -k12,12 -nr -k3,3 -k4,4 | head -n 1`;
@@ -23,9 +31,9 @@ if ($best_frwd_len == 19 && $best_frwd_iden >= 94.5) {
     if ($frwd_bestArray[9] > $frwd_bestArray[8]) {
 	##Extract the +500 sequence with Bedtools##
 	my $query_extract = $query_strt + 500;
-	open(my $fh, '>', 'emm_region_extract.bed') or die "Could not open file 'emm_region_extract.bed' $!";
-	print $fh "$best_frwd_name\t$query_strt\t$query_extract\n";
-	close $fh;
+	open(my $fhe, '>', 'emm_region_extract.bed') or die "Could not open file 'emm_region_extract.bed' $!";
+	print $fhe "$best_frwd_name\t$query_strt\t$query_extract\n";
+	close $fhe;
 	#print "done\n";
 	system("bedtools getfasta -fi ./velvet_output/contigs.fa -bed emm_region_extract.bed -fo emm_region_extract.fasta");
 	if ($? !=0) { die "Failed: bedtools getfasta -fi ./velvet_output/contigs.fa -bed emm_region_extract.bed -fo emm_region_extract.fasta" }
@@ -33,9 +41,9 @@ if ($best_frwd_len == 19 && $best_frwd_iden >= 94.5) {
 	print "extract from reverse strand\n";
 	##Extract the -500 sequence with Bedtools##
         my $query_extract = $query_strt - 500;
-        open(my $fh, '>', 'emm_region_extract.bed');
-        print $fh "$best_frwd_name\t$query_extract\t$query_strt\n";
-        close $fh;
+        open(my $fhe, '>', 'emm_region_extract.bed');
+        print $fhe "$best_frwd_name\t$query_extract\t$query_strt\n";
+        close $fhe;
 	
 	my $extract_emm1 = `bedtools getfasta -tab -fi ./velvet_output/contigs.fa -bed emm_region_extract.bed -fo stdout`;
         print "extract emm is:\n$extract_emm1\n";
@@ -59,6 +67,7 @@ if ($best_frwd_len == 19 && $best_frwd_iden >= 94.5) {
 
 ###Blast extracted emm region against database to find match###
 if ( -s "emm_region_extract.fasta") {
+    print "Doing blast blastn -db $emm_DB -query emm_region_extract.fasta -outfmt 6 -word_size 4 -out emm_vs_DB_nucl.txt\n\n";
   system("blastn -db $emm_DB -query emm_region_extract.fasta -outfmt 6 -word_size 4 -out emm_vs_DB_nucl.txt");
 } else {
     print "Although the best blast hit found a true match against the 19bp primer, the matching contig didn't contain the\nfull 500bp region downstream of the primer that comprises the emm-typing region\n";
@@ -82,6 +91,7 @@ if ($best_emm_iden == 100 && $best_emm_len == 180) {
     #$best_emm_name =~ /\d+__EMM(.*)__EMM.*__\d+/;
     $best_emm_name =~ /\d+__[A-Z]+(.*)__.*__\d+/;
     my $emmType = $1;
+    print "\n\n$finalName\t$emmType\t$best_emm_name\t$best_emm_iden\t$best_emm_len\n";
     print $fh "$finalName\t$emmType\t$best_emm_name\t$best_emm_iden\t$best_emm_len\n";
 } else {
     #$best_emm_name =~ /\d+__EMM(.*)__EMM.*__\d+/;

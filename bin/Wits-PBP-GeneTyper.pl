@@ -349,7 +349,6 @@ sub fasta_seq_length {
 print "\n";
 my $justName = `echo $outName | sed 's/PBP_//g'`;
 chomp($justName);
-print("LoTrac_target.pl -1 $fastq1 -2 $fastq2 -q $PBP_DB -S 2.2M -L 0.95 -f -n $justName -o $outDir");
 system("LoTrac_target.pl -1 $fastq1 -2 $fastq2 -q $PBP_DB -S 2.2M -L 0.95 -f -n $justName -o $outDir");
 chdir "$outDir";
 my $PBP_output = "TEMP_pbpID_Results.txt";
