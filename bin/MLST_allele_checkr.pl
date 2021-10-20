@@ -5,7 +5,6 @@ use warnings;
 use Data::Dumper;
 
 my ($MLST_input,$bam_input,$MLST_ref) = @ARGV;
-print "***$MLST_input\n";
 open (MY_MLST_INPUT, "$MLST_input");
 my @MLST_results;
 my $input_counter = 1;
