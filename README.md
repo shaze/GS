@@ -98,14 +98,10 @@ The output directory contains
 
 #4. Cleaning up
 
-This script has lots of intermediate files and output files. As an example, a test data aset of 7GB led to 12GB of output data and another 43GB of intermediate files.  Nextflow uses the `work` directory to store all the intermediate files and this needs to be cleaned out but some care needs to be taken. By default both for efficiency reasons and to ensure that the `-resume` works cleanly, all the large output files are symbolically linked from the work directory rathr than copied. So if you just delete the work directory you will effectively delete your output.
-
-So, once you have run the workflow and are happy with the  results, please clean up. One way of doing this would be to do the following.
-
-* run the workflow again with _exactly_ the same parameters but add `-resume --publish copy` (note: single dash for the first, double dash for the second). This will then _copy_ all the output files from the `work` to the specified output directory. This may take 2-3 minutes to run if your output files are large.
+This script has lots of intermediate files and output files. As an example, a test data aset of 7GB led to 12GB of output data and another 43GB of intermediate files.  Nextflow uses the `work` directory to store all the intermediate files and this needs to be cleaned out but some care needs to be taken.
 * delete the work directory `/bin/rm -rf work`  (there are fancier ways of doing this but this works_.
 
-But you may choose just to copy the files you want.
+
 
 
 #5.  Advanced paramters

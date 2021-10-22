@@ -60,7 +60,7 @@ process fastQC {
     output:
       set val(base), file("*/*html") into qc_ch
       file ("*/*{zip,html}") into fastqc_results_ch
-    publishDir "${params.out_dir}/${base}/qc_reports", mode: 'copy', overwrite: true
+    publishDir "${params.out_dir}/${base}/qc_reports", mode: params.publish, overwrite: true
     script:
     """
      mkdir ./${base}_R1_qc ./${base}_R2_qc
@@ -283,7 +283,7 @@ process reportGlobal {
      val low_cov from low_coverage_ch.mix (query_length_prob_ch).map { it[0]+"-"+it[1] }.ifEmpty("None").toList()
   output:
      file(rep_name)
-  publishDir "${params.out_dir}", mode: 'copy', overwrite: true
+  publishDir "${params.out_dir}", mode: params.publish, overwrite: true
   script:
       lc=(low_cov).join(",")
       rep_name="gbs-"+new java.text.SimpleDateFormat("yyyy-MM-dd-HHmmss").format(new Date())+".xlsx"
