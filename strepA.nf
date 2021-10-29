@@ -200,6 +200,7 @@ process velvet {
   script:
      k = vk.trim()
   """
+   hostname
    export OMP_NUM_THREADS=${params.max_velvet_cpus}
    VelvetOptimiser.pl -s $k -e $k -o "-scaffolding no" \
                     -f "-shortPaired -separate -fastq $f1 $f2" -d velvet_output;
