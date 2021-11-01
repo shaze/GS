@@ -3,7 +3,7 @@
 
 
 max_forks = params.max_forks
-db_dir = params.allDB_dir
+db_dir = params.strepB_DB
 
 db=file(db_dir)
 
@@ -19,7 +19,7 @@ output_dir="gbs_typing"
 suffix=params.suffix
 
 
-Channel.fromFilePairs("${params.batch_dir}/*_R{1,2}_001"+suffix)
+Channel.fromFilePairs("${params.batch_dir}/*_R{1,2}_001."+suffix)
        .into { fqPairs1; fqPairs2; fqPairs3; fqPairs4;  fqPairs5 ; fqPairs6}
 
 

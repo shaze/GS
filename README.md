@@ -45,10 +45,10 @@ You need the following three parameters (defaults are given in square brackets -
 * `batch_dir` : the name of the directory containing the read pair files. There must be
   exactly two files per sample, named appropriately [`/dataC/CRDM/testingreads_gbs/191206_M02143`]
 * `out_dir`: the name of the output directory where data should go ["output"]
-* `allDB_dir`: the name of the database directory [`/dataC/CRDM/GBS_Scripts_Reference/GBS_Reference_DB`]
+* `strepA_DB` _or_ `strepB_DB` : the name of the database directory [`/dataC/CRDM/G[AB]_Reference_DB`]
 
 
-*Important assumption* This workflow assumes that all input fastq files end with `_R1_001` or `_R2_001`, followed by a suffix. The default suffix is `fastq.gz`
+*Important assumption* This workflow assumes that all input fastq files end with `_R1_001` or `_R2_001`, followed by a suffix (this assumption is required by srst2). The default suffix is `fastq.gz`
 
 See advanced parameters below.
 

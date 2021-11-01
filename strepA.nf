@@ -5,8 +5,9 @@ max_forks = params.max_forks
 
 params.out_dir = "gas_output"
 params.batch_dir="/dataC/CRDM/gas_test_small/"
-params.allDB_dir="/dataC/GAS_Reference_DB"
-db_dir = params.allDB_dir
+staged_batch_dir = file (params.batch_dir)
+params.strepA_DB="/dataC/CRDM/GAS_Reference_DB"
+db_dir = params.strepA_DB
 suffix=params.suffix
 
 
@@ -169,11 +170,16 @@ process MLSTalleleChecker {
       file(strep_pyog)
    output:
       stdout ch
+      file ("${base}_new_mlst.txt") optional true into new_mlst_ch
    errorStrategy 'finish'
    script:
    """
     echo $bam
     MLST_allele_checkr.pl $results $bam $strep_pyog
+    if [ -e Check_Target_Sequence.txt ]; then
+       cp Check_Target_Sequence.txt  ${base}_new_mlst.txt
+    fi
+
    """
 }
 
@@ -256,7 +262,133 @@ process LoTrac {
                      -S 2.2M -L 0.95 -f -n $base -o ./
    """
 }
-	 
+
+
+process pbpGeneTyper {
+   input:
+     tuple  val(base),  file(fastas) from lotrac_output_ch
+     file(db)
+   output:
+      set val(base), file("TEMP_pbpID_Results.txt") into pbp_res_ch
+      set val(base), file("TEMP_pbpID_Results.txt") into pbp_res1_ch
+      file("${base}_newPBP_allele_info.txt")  optional true into newpbp_ch
+   script:
+   """     
+   PBP-Gene_TyperWits.pl -1 XX -2 YY -r $db/GAS_bLactam_Ref.fasta -n $base  -s GAS -p 2X
+   if [ -e newPBP_allele_info.txt ]; then
+      cp newPBP_allele_info.txt ${base}_newPBP_allele_info.txt
+   fi
+   """
+}
+
+
+g_res_typer="GAS_Res_Typer.pl"
+g_res_gene_db="GAS_Res_Gene-DB_Final.fasta"
+
+process gsResTyper {
+   input:
+   set val(base),  file(pair), file(cut1), file(cut2), file(velvet_output) \
+        from fqPairs5.join(trimmed_ch5).join(velvet_gsres_ch)
+     file(db)
+   output:
+     set val(base), file("TEMP_Res_Results.txt"), file("BIN_Res_Results.txt") into gs_res_ch
+     tuple val(base), file("BIN_Res_Results.txt") into gs_res1_ch
+   script:
+   """
+     $g_res_typer -1 ${pair[0]} -2 ${pair[1]} -d $db  -r $g_res_gene_db -n $base
+   """
+}
+
+
+g_target2MIC = "GAS_Target2MIC.pl"
+
+process gsTarget2Mic {
+  input:
+    set val(base), file(gbs_temp), file(gbs_bin), file(pbp) from \
+        gs_res_ch.join(pbp_res_ch)
+  output:
+     set val(base), file("RES-MIC*") into gs_target_ch
+  script:
+  """
+     $g_target2MIC $base $pbp
+  """
+}
+
+
+
+g_sf_typer="GAS_Features_Typer.pl"
+g_sf_typer_parm="-f GAS_features_Gene-DB_Final.fasta"
+
+
+
+process gsFeatureTyper {
+   input:
+     set val(base),  file(pair) from fqPairs6
+     file(db)
+   errorStrategy 'finish'
+   output:
+     set val(base), file("TEMP_protein_Results.txt"), file("BIN_Features_Results.txt") \
+       into surface_res_ch
+  script:
+  """
+   $g_sf_typer -1 ${pair[0]} -2 ${pair[1]} -d $db $g_sf_typer_parm -n $base
+  """
+}
+
+
+reports_ch = emm_res_ch
+               .join(bam_src1_ch)
+	       .join(pbp_res1_ch)
+	       .join(velvet_report_ch)
+	       .join(gs_target_ch)
+	       .join(surface_res_ch)
+	       .join(gs_res1_ch)
+
+process reportSample {
+
+   input:
+      set val(base), \
+	  file(emm_result), \
+	  file(srst_res),
+	  file(pbp_res), file(velvet_output),\
+	  file(gs_target), file(temp_surface), file(bin_surface),  \
+	  file(bin_res)\
+	  from reports_ch
+   errorStrategy 'finish'
+   output:
+      tuple file(tabl_out), file(bin_out) into reports mode 'flatten'
+   publishDir "${params.out_dir}/", mode: 'copy', overwrite: true    
+   script:
+     tabl_out="${base}_TABLE_Isolate_Typing_results.txt"
+     bin_out="${base}_BIN_Isolate_Typing_results.txt"
+     """
+     gas_report.sh  $base $tabl_out $bin_out $emm_result
+     ls
+     """   
+}
+
+
+
+low_coverage_ch = Channel.empty() // we may get from future impls of velvet
+
+process reportGlobal {
+  input: 
+     file(reps) from reports.flatten().toList()
+     file(newpbps) from newpbp_ch.toList()
+     file(db)
+     val low_cov from low_coverage_ch.mix (query_length_prob_ch).map { it[0]+"-"+it[1] }.ifEmpty("None").toList()
+  output:
+     file(rep_name)
+  publishDir "${params.out_dir}", mode: 'copy', overwrite: true
+  script:
+      lc=(low_cov).join(",")
+      rep_name="gas-"+new java.text.SimpleDateFormat("yyyy-MM-dd-HHmmss").format(new Date())+".xlsx"
+      """
+      combined_report_generic.py A $suffix ${params.batch_dir} ${params.out_dir}  \
+                      $rep_name $lc
+      echo $low_cov > see
+      """
+}
 
 
 process multiqc {

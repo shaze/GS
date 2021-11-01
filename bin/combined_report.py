@@ -43,6 +43,7 @@ plist=[]
 pbp = glob.glob("*_newPBP_allele_info.txt")
 for p in pbp:
     data=open(p).readline().strip().split()
+    print(data)
     plist.append([data[0],data[-1]])
 if len(plist)==0: plist=[["---None---", "---None---"]]
 pdf = pd.DataFrame(plist,columns=["Sequence","Allele"])
