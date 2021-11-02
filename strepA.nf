@@ -27,7 +27,10 @@ adapter1="AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC"
 adapter2="AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT"
 
 
-Channel.fromFilePairs("${params.batch_dir}/*_R{1,2}_001.fastq.gz").into { fqPairs1; fqPairs2; fqPairs3; fqPairs4;  fqPairs5 ; fqPairs6}
+Channel.fromFilePairs("${params.batch_dir}/*_R{1,2}_001.fastq.gz").
+      ifEmpty { println "No files  match pattern: ${params.batch_dir}/*_R{1,2}_001.fastq.gz";
+                System.exit(10) }.
+      into { fqPairs1; fqPairs2; fqPairs3; fqPairs4;  fqPairs5 ; fqPairs6}
 
 
 primer_db=file("$db_dir/frwd_primr-DB_Final.fasta")
@@ -54,13 +57,14 @@ process makeBlastDBprimer {
       file(x) from bowtie_indices.toList() // this is just a hack to have a barrier
     output:
      file("${bl_out}*") into blast_db_ch
-    //storeDir db_dir
+    storeDir db_dir
     script:
        bl_out="blast_frwd_primr-nucl_DB"
      """
      makeblastdb -in $primer_db -dbtype nucl -out $bl_out
      """
 }
+
 
 
 process makeBlastEMMr {
@@ -83,7 +87,7 @@ process makeBlactamDB {
   each pbp_type from pbp_types
   output:
     file("$db/${blastDB_name}*pto") into blast_blactam_ch
-    storeDir db_dir  
+  storeDir db_dir  
   script:
     blastDB_name = "Blast_bLactam_${pbp_type}_prot_DB"
     blast_seq = "GAS_bLactam_${pbp_type}-DB.faa"
@@ -304,13 +308,13 @@ g_target2MIC = "GAS_Target2MIC.pl"
 
 process gsTarget2Mic {
   input:
-    set val(base), file(gbs_temp), file(gbs_bin), file(pbp) from \
+    set val(base), file(gas_temp), file(gbs_bin), file(pbp) from \
         gs_res_ch.join(pbp_res_ch)
   output:
      set val(base), file("RES-MIC*") into gs_target_ch
   script:
   """
-     $g_target2MIC $base $pbp
+     $g_target2MIC $gas_temp $base $pbp
   """
 }
 
@@ -398,7 +402,7 @@ process multiqc {
     output:
     file "multiqc_report.html" into multiqc_report
     file "multiqc_data"
-    publishDir "${params.out_dir}", mode: params.publish, overwrite: true
+    publishDir "${params.out_dir}", mode: 'copy', overwrite: true
     script:
     """
     multiqc .

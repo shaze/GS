@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -15,8 +15,8 @@ use File::Spec;
 
 sub checkOptions {
     my %opts;
-    getopts('h1:2:r:d:o:n:', \%opts);
-    my ($help, $fastq1, $fastq2, $PBP_DB, $outDir, $outName);
+    getopts('h1:2:r:o:n:s:p:', \%opts);
+    my ($help, $fastq1, $fastq2, $PBP_DB, $outDir, $outName, $pbp_genes, $species, @pbp_input);
 
     if($opts{h}) {
         $help = $opts{h};
@@ -87,7 +87,37 @@ sub checkOptions {
         print "The default output file name prefix is: $outName";
     }
 
-    return ($help, $fastq1, $fastq2, $PBP_DB, $outDir, $outName);
+    if($opts{s}) {
+	if ($opts{s} eq "GAS" || $opts{s} eq "GBS" || $opts{s} eq "SPN") {
+	    $species = $opts{s};
+	    print "The species is: $species\n";
+	} else {
+	    print "The species argument needs to be one of the following: GAS, GBS or SPN\n";
+	    help();
+	}
+    } else {
+        print "The species argument hasn't been provided\n";
+	help();
+    }
+
+    if($opts{p}) {
+        $pbp_genes = $opts{p};
+	@pbp_input = split(/,/,$pbp_genes);
+	foreach my $pbp (@pbp_input) {
+	    if ($pbp =~ /^1A$|^2B$|^2X$/) {
+		print "The script will extract the following PBP gene: $pbp\n";
+	    } else {
+		print "The PBP gene <$pbp> doesn't exist or isn't in the right format.\n";
+		print "Make sure you provide a comma delimited string containing 1A, 2B or 2X (e.g. '1A,2B,2X').\n";
+		help();
+	    }
+        }
+    } else {
+        print "The PBP gene input argument has not been given.\n";
+        help();
+    }
+
+    return ($help, $fastq1, $fastq2, $PBP_DB, $outDir, $outName, $species, @pbp_input);
 }
 
 sub help
@@ -96,7 +126,7 @@ sub help
 die <<EOF
 
 USAGE
-GBS_PBP-Gene_Typer.pl -1 <forward fastq file: fastq> -2 <reverse fastq file: fastq> -r <reference databases directory: file path> -o <output directory name: string> -n <output name prefix: string>  [OPTIONS]
+GBS_PBP-Gene_Typer.pl -1 <forward fastq file: fastq> -2 <reverse fastq file: fastq> -r <reference databases directory: file path> -s <species name: string> -p <pbp genes: string> [OPTIONS]
 
     -h   print usage
     -1   forward fastq sequence filename (including full path)
@@ -104,12 +134,13 @@ GBS_PBP-Gene_Typer.pl -1 <forward fastq file: fastq> -2 <reverse fastq file: fas
     -r   PBP reference sequence file path (including full path)
     -o   output directory
     -n   output name prefix
+    -s   type of strep species. Input argument must be GAS, GBS or SPN.
+    -p   comma delimited string that defines which PBP genes should be extracted (1A,2B,2X)
 
 EOF
 }
 
-my ($help, $fastq1, $fastq2, $PBP_DB, $outDir, $outName) = checkOptions( @ARGV );
-
+my ($help, $fastq1, $fastq2, $PBP_DB, $outDir, $outName, $species, @pbp_input) = checkOptions( @ARGV );
 
 
 
@@ -124,26 +155,22 @@ sub PBP_blastTyper {
     #print "type: $pbp_type || name: $pbp_name || LoTrac Extract: $pbp_extract\n";
 
     my $query_seq = extractFastaByID($pbp_name,$pbp_extract);
-    #my $query_length = fasta_seq_length($query_seq);
-    open ( my $qOUT, ">", 'TEMP_query_sequence.fna' ) or die "Could not open file TEMP_query_sequence.fna: $!";
-    print $qOUT $query_seq;
-    close $qOUT;
-    ##Translate TEMP_query_sequence.fna to .faa file
-    #system("Translate_DNA-6Frame.pl -s TEMP_query_sequence.fna -f 1 -l 3 > TEMP_query_sequence.faa");
-    #my $query_length = fasta_seq_length("TEMP_query_sequence.faa");
-    my $PARC_aaSeq = sixFrame_Translate($query_seq,1);
-    system("echo $PARC_aaSeq > TEMP_query_sequence.faa");
-    my $query_length = fasta_seq_length($PARC_aaSeq);
+    if (!($query_seq =~ /[a-zA-Z]+/)) {
+	print "query seq is EMPTY\n";
+	$pbp_out = "NF";
+	return $pbp_out;
+    }
+    my ($query_hedr, $query_aaSeq) = sixFrame_Translate($query_seq,1);
+    `printf ">$query_hedr\n$query_aaSeq\n" > TEMP_query_sequence.faa`;
+    my $query_length = fasta_seq_length($query_aaSeq);
 
     my $db_path = dirname($PBP_DB);
     my $blastDB_name = "Blast_bLactam_".$pbp_type."_prot_DB";
-    my $blast_seq = "SPN_bLactam_".$pbp_type."-DB.faa";
+    my $blast_seq = $species."_bLactam_".$pbp_type."-DB.faa";
     my $blast_out = "TEMP_".$outName."_blast-out_".$pbp_type.".txt";
     print "Blast DB name: $db_path/$blastDB_name\n";
     if (!(glob("$db_path/$blastDB_name*"))) {
-	print "Need to make a new Blast database\n";
-	system("makeblastdb -in $db_path/$blast_seq -dbtype prot -out $db_path/$blastDB_name");
-	system("blastp -db $db_path/$blastDB_name -query TEMP_query_sequence.faa -outfmt 6 -out $blast_out");
+	die "No BLAST database ";
     } else {
 	print "Blast database has already been created\n";
         system("blastp -db $db_path/$blastDB_name -query TEMP_query_sequence.faa -outfmt 6 -out $blast_out");
@@ -170,7 +197,7 @@ sub PBP_blastTyper {
 	my $new_PBPseq = "PBP_".$pbp_type."_query_sequence.faa";
 	rename("TEMP_query_sequence.faa",$new_PBPseq);
 	my $fragPath = File::Spec->rel2abs("$new_PBPseq");
-	open(my $f_new,'>>',"TEMP_newPBP_allele_info.txt") or die "Could not open file 'TEMP_newPBP_allele_info.txt' $!";
+	open(my $f_new,'>>',"newPBP_allele_info.txt") or die "Could not open file 'newPBP_allele_info.txt' $!";
 	print $f_new "$outName\t$fragPath\t$pbp_type\n";
 	close $f_new;
     } else {
@@ -265,7 +292,7 @@ sub sixFrame_Translate {
                     }
     }
 #print "translate result\n$protein[$opt_f]\n";
-return $protein[$opt_f];
+return ($DNAheader,$protein[$opt_f]);
 }
 
 sub extractFastaByID {
@@ -297,6 +324,7 @@ sub fasta_seq_length {
     #my @lines = split /\n/, $q_seq;
     my @lines = split /\n/, $seq;
     my $final_line;
+    $final_line="";
     foreach my $line (@lines) {
     #while (my $line = <$q_seq>) {
         chomp($line);
@@ -314,34 +342,72 @@ sub fasta_seq_length {
 
 
 
-
+#=pod
 ###Start Doing Stuff###
 print "\n";
-#chdir "$outDir";
-##my $PBP_output = "PBP_".$outName."_Results.txt";
 my $justName = `echo $outName | sed 's/PBP_//g'`;
+chomp($justName);
+system("LoTrac_target.pl -1 $fastq1 -2 $fastq2 -q $PBP_DB -S 2.2M -L 0.95 -f -n $justName -o $outDir");
+chdir "$outDir";
 my $PBP_output = "TEMP_pbpID_Results.txt";
 open(my $fh,'>',$PBP_output) or die "Could not open file '$PBP_output' $!";
-##print $fh "Sample_Name\tPBP_1A\tPBP_2X\tPBP_Code\n";
-print $fh "Sample_Name\tPBP_Code(1A:2B:2X)\n";
+#if (glob("ERROR_*1A*.fasta") || glob("ERROR_*2B*.fasta") || glob("ERROR_*2X*.fasta")) {
+#    print $fh "No PBP Type\n";
+#    exit
+#}
 
-system("LoTrac_target.pl -1 $fastq1 -2 $fastq2 -q $PBP_DB -S 2.2M -f -n $justName -o $outDir");
+my ($code_1A, $code_2B, $code_2X) = ("NF", "NF", "NF");
+foreach my $pbp (@pbp_input) {
+    if ($pbp eq "1A" && ! glob("ERROR_*1A*.fasta")) {
+	my $pbp_1A = glob("EXTRACT_*1A*.fasta");
+	my $pbp1A_fragName = `cat $pbp_1A | grep ">" | tail -n1 | sed 's/>//g'`;
+	chomp($pbp1A_fragName);
+	$code_1A = PBP_blastTyper("1A",$pbp1A_fragName,$pbp_1A);
+        print "pbp extract file: $pbp_1A || pbp extraction name: $pbp1A_fragName || pbp ID is: $code_1A\n";
+    } elsif ($pbp eq "2B" && ! glob("ERROR_*2B*.fasta")) {
+	my $pbp_2B = glob("EXTRACT_*2B*.fasta");
+	my $pbp2B_fragName = `cat $pbp_2B | grep ">" | tail -n1 | sed 's/>//g'`;
+	chomp($pbp2B_fragName);
+	$code_2B = PBP_blastTyper("2B",$pbp2B_fragName,$pbp_2B);
+    } elsif ($pbp eq "2X" && ! glob("ERROR_*2X*.fasta")) {
+	my $pbp_2X = glob("EXTRACT_*2X*.fasta");
+	my $pbp2X_fragName = `cat $pbp_2X | grep ">" | tail -n1 | sed 's/>//g'`;
+	chomp($pbp2X_fragName);
+	$code_2X = PBP_blastTyper("2X",$pbp2X_fragName,$pbp_2X);
+    }
+}
 
-chdir "$outDir";
-my $pbp_1A = glob("EXTRACT_*1A*.fasta");
-my $pbp1A_fragName = `cat $pbp_1A | grep ">" | tail -n1 | sed 's/>//g'`;
-my $pbp_2B = glob("EXTRACT_*2B*.fasta");
-my $pbp2B_fragName = `cat $pbp_2B | grep ">" | tail -n1 | sed 's/>//g'`;
-my $pbp_2X = glob("EXTRACT_*2X*.fasta");
-my $pbp2X_fragName = `cat $pbp_2X | grep ">" | tail -n1 | sed 's/>//g'`;
-
-my $code_1A = PBP_blastTyper("1A",$pbp1A_fragName,$pbp_1A);
-my $code_2B = PBP_blastTyper("2B",$pbp2B_fragName,$pbp_2B);
-my $code_2X = PBP_blastTyper("2X",$pbp2X_fragName,$pbp_2X);
-##print $fh "$outName\t$code_1A\t$code_2X\t$code_1A:$code_2X\n";
-print $fh "$outName\t$code_1A:$code_2B:$code_2X\n";
+if ($species eq "GBS") {
+    print $fh "Sample_Name\tPBP_Code(1A:2B:2X)\n";
+    print $fh "$outName\t$code_1A:$code_2B:$code_2X\n";
+} elsif ($species eq "SPN") {
+    print $fh "Sample_Name\tPBP_Code(1A:2B:2X)\n";
+    print $fh "$outName\t$code_1A:$code_2B:$code_2X\n";
+} elsif ($species eq "GAS") {
+    print $fh "Sample_Name\tPBP_Code(1A:2B:2X)\n";
+    print $fh "$outName\t$code_2X\n";
+}
 close $fh;
+#=cut
 
+
+
+
+
+
+
+#my $pbp_1A = glob("EXTRACT_*1A*.fasta");
+#my $pbp1A_fragName = `cat $pbp_1A | grep ">" | tail -n1 | sed 's/>//g'`;
+#my $pbp_2B = glob("EXTRACT_*2B*.fasta");
+#my $pbp2B_fragName = `cat $pbp_2B | grep ">" | tail -n1 | sed 's/>//g'`;
+#my $pbp_2X = glob("EXTRACT_*2X*.fasta");
+#my $pbp2X_fragName = `cat $pbp_2X | grep ">" | tail -n1 | sed 's/>//g'`;
+#my $code_1A = PBP_blastTyper("1A",$pbp1A_fragName,$pbp_1A);
+#my $code_2B = PBP_blastTyper("2B",$pbp2B_fragName,$pbp_2B);
+#my $code_2X = PBP_blastTyper("2X",$pbp2X_fragName,$pbp_2X);
+#print $fh "$outName\t$code_1A\t$code_2X\t$code_1A:$code_2X\n";
+#print $fh "$outName\t$code_1A:$code_2X\n";
+#close $fh;
 
 ###Delete Temp Files###
 #unlink(TEMP*);

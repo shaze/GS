@@ -58,8 +58,9 @@ do
     #RES_targ=$(echo "$line" | cut -f2)
     #printf "$RES_targ\t" >> "$tabl_out"
     printf "$line\t" | tr ',' '\t' >> "$tabl_out"
-done < RES-MIC_TEMP_pbpID_Results.txt
-				     
+done < "RES-MIC_$base"
+
+#printf "*\t*\t*\t*\t*\t*" >> $tabl_out
 printf "\n" >> "$tabl_out"
 
 cat BIN_Features_Results.txt | sed 's/$/,/g' >> "$bin_out"

@@ -18,7 +18,7 @@ print "Output file name is: $Res_output\n";
 
 my %Res_hash;
 my $RES_full_name = $ARGV[0];
-open(MYINPUTFILE, "$RES_full_name");
+open(MYINPUTFILE, "$RES_full_name") or die "Can't open $RES_full_name";
 while(<MYINPUTFILE>) {
     #next if $. < 2;
     my $line = $_;

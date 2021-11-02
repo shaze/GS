@@ -48,7 +48,8 @@ You need the following three parameters (defaults are given in square brackets -
 * `strepA_DB` _or_ `strepB_DB` : the name of the database directory [`/dataC/CRDM/G[AB]_Reference_DB`]
 
 
-*Important assumption* This workflow assumes that all input fastq files end with `_R1_001` or `_R2_001`, followed by a suffix (this assumption is required by srst2). The default suffix is `fastq.gz`
+
+*Important assumption* This workflow assumes that all input fastq files end with `L001_R1_001` or `L001_R2_001`, followed by a suffix (this assumption is required by srst2). The default suffix is `fastq.gz`
 
 See advanced parameters below.
 
@@ -62,13 +63,39 @@ In addition there are two _Nextflow_ parameters that you can use (especially the
 * `-profile resume`: if something crashed in a run for a reason other than an error in the workflow (say the computer's power went down) then you can use this to pick up execution from the point that execution failed (obviously if there's a bug in the workflow or a problem with the data the workflow will just crash again)
 
 
-# 3. Running the `GBS_Scripts_Reference` workflow
+# 3. Running the `GAS_Scripts_Reference` workflow
+
+
+```
+
+nextflow run shaze/GS/strepA.nf  --batch_dir NAMEOFINPUTDIR --out_dir NAMEOFOUTPUTDIR --strepA_DB DBdirectory --max_forks  NUMBER
+                        
+
+```
+
+
+A typical run might be
+
+```
+
+nextflow run shaze/GS/strepA.nf  --batch_dir august_data --out_dir /dataC/archive/august -profile slurm
+                        
+
+```
+
+This takes that data from `august_data` and puts the results in `/dataC/archive/august` using the default parameters for the database and `max_forks`. It also says that jobs should be submitted to the cluster by the SLURM scheduler which allows all the computers in the cluster to be used.
+
+You can run this from any directory. *If you are running on the Wits cluster please do not run from your home directory -- the output and intermediate files are very large and put pressure on our backup. Use your given project directory*.
+
+This run above assumes that the database directory is in the default place. On the Wits cluster this is `/dataC/CRDM/GAS_Reference_DB`. If it is somehwere else use the `--strepA_DB` argument -- for example `--strepA_DB /home/scott/DBS/GAS_A`.
+
+# 4. Running the `GBS_Scripts_Reference` workflow
 
 
 
 ```
 
-nextflow run shaze/GS/strepB.nf  --batch_dir NAMEOFINPUTDIR --out_dir NAMEOFOUTPUTDIR --allDB_dir DBdirectory --max_forks  NUMBER
+nextflow run shaze/GS/strepB.nf  --batch_dir NAMEOFINPUTDIR --out_dir NAMEOFOUTPUTDIR --strepB_DB DBdirectory --max_forks  NUMBER
                         
 
 ```
@@ -82,12 +109,10 @@ nextflow run shaze/GS/strepB.nf  --batch_dir august_data --out_dir /dataC/archiv
 
 ```
 
-This takes that data from `august_data` and puts the results in `/dataC/archive/august` using the default parameters for the database and `max_forks`. It also says that jobs should be submitted to the cluster by the SLURM scheduler which allows all the computers in the cluster to be used.
-
-You can run this from any directory. *If you are running on the Wits cluster please do not run from your home directory -- the output and intermediate files are very large and put pressure on our backup. Use your given project directory*.
+The same remarks as for `strepA` apply for the various parameters except that if the reference DB is not in the default place (`/dataC/CRDM/GBS_Reference_DB`) then use the `--strepB_DB` option. 
 
 
-## Output
+#5. Output
 
 The output directory contains
 * an Excel spreadsheet summarising the results
@@ -96,7 +121,7 @@ The output directory contains
 * a directory `new_mlst` with new MLST data
 
 
-#4. Cleaning up
+#6. Cleaning up
 
 This script has lots of intermediate files and output files. As an example, a test data aset of 7GB led to 12GB of output data and another 43GB of intermediate files.  Nextflow uses the `work` directory to store all the intermediate files and this needs to be cleaned out but some care needs to be taken.
 * delete the work directory `/bin/rm -rf work`  (there are fancier ways of doing this but this works_.
@@ -108,13 +133,12 @@ This script has lots of intermediate files and output files. As an example, a te
 
 * `max_forks`: a parameter limiting the parallelism. Essentially only this number of samples are allowed to be in the first phase of the workflow at the same time and acts as a throttle (there will in general be more than this number of processes happening in parallel as this throttles only the number of samples being processed in the first phase not the total work being done. The default is 10 --  the reason for this throttle is not so much to limit the number of jobs running (since you can rely on the scheduler to do this sensibly) but that although these files are not huge if a lot of work is being done in parallel the I/O performance can suffer. Experiment so that you can get things done quickly without making everyone else hate you.
 
-* `publish`: default is `link`. Most output files are symbolically linked from the work directory to the output directory. This is more efficient computationally but when the work directory is deleted your output directory is removed. Re-running the workflow with `-resume --publish copy` will copy the output files across
 
 * `suffix`: default is `fastq.gz`. The workflow assumes that all the fastq files end with this suffix. If you have a different suffix, then use this parameter, for example `--suffix fq.gz`. All input files must have the same suffix.
 
 * `max_velvet_cpus`: how many CPUs should be used for Velvet. While Velvet has some parts that are parallelisable, a simple application of Amdahl's law shows that it is not worth allocating many threads to individual runs of Velvet. Since we are running Velvet on many different data sets, it makes more sense to run more of these independent jobs in parallel.
 
-## Creating a config file
+#7. Creating a config file
 
 You can create a config file like this (say `demo.config`) and then run your code 
 
