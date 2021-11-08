@@ -361,7 +361,6 @@ process reportSample {
    errorStrategy 'finish'
    output:
       tuple file(tabl_out), file(bin_out) into reports mode 'flatten'
-   publishDir "${params.out_dir}/", mode: 'copy', overwrite: true    
    script:
      tabl_out="${base}_TABLE_Isolate_Typing_results.txt"
      bin_out="${base}_BIN_Isolate_Typing_results.txt"

@@ -26,14 +26,22 @@ done <<< "$(sed 1d $emm)"
 printf "$emm_out\t" >> "$tabl_out"
 printf "$emm_out," >> "$bin_out"
 
-sed 1d "MLST_${base}__mlst__Streptococcus_pyogenes__results.txt" | while read -r line
-do
+nlen=`wc -l MLST_${base}__mlst__Streptococcus_pyogenes__results.txt | awk '{print $1}'`
+if [[ "$nlen" -eq "1" ]]; then
+    MLST_tabl=".       .      .      .      .      .      .      ."
+    printf "$MLST_tabl\t" >>  "$tabl_out"
+    printf ".,">> $bin_out
+else
+  sed 1d "MLST_${base}__mlst__Streptococcus_pyogenes__results.txt" | while read -r line
+  do
     MLST_tabl=$(echo "$line" | cut -f2-9)
     echo "MLST line: $MLST_tabl\n";
     printf "$MLST_tabl\t" >> "$tabl_out"
     MLST_val=$(echo "$line" | awk -F" " '{print $2}')
     printf "$MLST_val," >> "$bin_out"
-done 
+  done 
+fi
+
 
 while read -r line
 do

@@ -58,7 +58,7 @@ if ($best_frwd_len == 19 && $best_frwd_iden >= 94.5) {
     }
 } else {
     print "The best blast hit ($best_frwd_name) obtained from querying the assembled contigs against the emm forward primers\ndidn't meet minimum criteria of length and identity to call a true match.\n";
-    print $fh "$outName\tExtraction_Error\t--\t--\t--\n";
+    print $fh "No_match_$outName\tExtraction_Error\t--\t--\t--\n";
     my $old_name = "emm-Type_Results.txt";
     my $emm_out = $outName."__emm-Type__Results.txt";
     rename $old_name, $emm_out;

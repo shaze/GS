@@ -15,6 +15,10 @@ contamination_level=params.contamination_level
 mod_blactam=file("${db_dir}/MOD_bLactam_resistance.fasta")
 
 
+adapter1="AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC"
+
+adapter2="AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT"
+
 
 Channel.fromFilePairs("${params.batch_dir}/*_R{1,2}_001.fastq.gz").
       ifEmpty { println "No files  match pattern: ${params.batch_dir}/*_R{1,2}_001.fastq.gz";
@@ -27,7 +31,7 @@ process sampleSubSeq {
     tuple val(base), file(pair) from fqPairs1
   output:
     tuple val(base), file("${out}_1.fq.gz"), file("${out}_2.fq.gz")\
-           into sample_pairs_1_ch, sample_pairs_2_ch
+           into sample_pairs_1_ch, sample_pairs_2_ch, sample_pairs_3_ch
   script:
     out="${base}_s"
   """
@@ -35,10 +39,6 @@ process sampleSubSeq {
      seqtk sample ${pair[1]} 600000 | gzip > ${out}_2.fq.gz
   """
 }
-
-sample_pairs_2_ch.join(trimmed_ch4)
-         .map { base, pair, trim1, trim2 -> [base, pair[0], pair[1], trim1, trim2] }
-	 .set { pbp_inputs_ch }
 
 
 pbp_types = ["1A","2B","2X"]
@@ -140,6 +140,12 @@ process velvet {
 	 
 
 
+sample_pairs_3_ch.join(trimmed_ch4)
+         .map { base, pair, trim1, trim2 -> [base, pair[0], pair[1], trim1, trim2] }
+	 .set { pbp_inputs_ch }
+
+
+
 
 process LoTrac {
    input:
@@ -179,196 +185,59 @@ process miscResistance {
   script:
     out="misc_$base"
   """
-    SPN_miscRes_Typer.pl -1 $f1 -2 $f2 -r $db -m miscDrug_Gene-DB_Final.fasta -v vanDrug_Gene-DB_Final.fasta -n "$out_nameMISC
+    SPN_miscRes_Typer.pl -1 $f1 -2 $f2 -r $db -m miscDrug_Gene-DB_Final.fasta -v vanDrug_Gene-DB_Final.fasta -n $outC
   """
 }
 
 
 
 
+process reportSample {
 
-pbp_types = ["2X"]
-
-process makeBlactamDB {
-  input:
-    file(db)
-  each pbp_type from pbp_types
-  output:
-    file("$db/${blastDB_name}*pto") into blast_blactam_ch
-    storeDir db_dir  
-  script:
-    blastDB_name = "Blast_bLactam_${pbp_type}_prot_DB"
-    blast_seq = "GAS_bLactam_${pbp_type}-DB.faa"
-  """
-   makeblastdb -in $db/$blast_seq -dbtype prot -out $db/$blastDB_name
-  """
-}  
-
-
-
-primer_db=file("$db_dir/frwd_primr-DB_Final.fasta")
-emm_db=file("$db_dir/emm_Gene-DB_Final.fasta")
-
-
-bowtie_sources = Channel.fromPath(["$db_dir/GAS_features_Gene-DB_Final.fasta","$db_dir/GAS_Res_Gene-DB_Final.fasta"])
-
-process makeBowtieIndices {
-    input:
-    file f from bowtie_sources
-    output:
-      file("$f.*") into bowtie_indices
-    storeDir db_dir
-    script:
-    """
-    bowtie2-build $f $f
-    """
-}
-
-process makeBlastDBprimer {
-    input:
-      file(primer_db)
-      file(x) from bowtie_indices.toList() // this is just a hack to have a barrier
-    output:
-     file("${bl_out}*") into blast_db_ch
-    //storeDir db_dir
-    script:
-       bl_out="blast_frwd_primr-nucl_DB"
-     """
-     makeblastdb -in $primer_db -dbtype nucl -out $bl_out
-     """
-}
-
-
-process makeBlastEMMr {
-    input:
-      file(emm_db)
-    output:
-     file("emm_db") into blast_emm_db_ch
-    script:
-       bl_out="blast_emm_Gene-nucl_DB"
-     """
-     makeblastdb -in $emm_db -dbtype nucl  -out emm_db/$bl_out
-     """
-}
-
-
-
-process srstP {
-    maxForks max_forks
-    input:
-      set val(base), file(pair) from fqPairs2
-      file(strep_pyog)
-      file(strep_pyog_txt)
-    output:
-      set val(base), file(results), file("${name}*bam") into bam_src_ch
-      set val(base),  file(results) into bam_src1_ch
-    script:
-      name = "MLST_$base"
-      results = "${name}__mlst__Streptococcus_pyogenes__results.txt"
-      """
-        hostname
-        srst2 --samtools_args '\\-A'  --mlst_delimiter '_' --input_pe $pair \
-	      --output $name --save_scores \
-	      --mlst_db  $strep_pyog --mlst_definitions $strep_pyog_txt --min_coverage 99.999 
-      """
-}
-
-process MLSTalleleChecker {
    input:
-      set val(base), file(results), file(bam) from bam_src_ch
-      file(strep_pyog)
-   output:
-      stdout ch
+      set val(base), \
+	  file(emm_result), \
+	  file(srst_res),
+	  file(pbp_res), file(velvet_output),\
+	  file(gs_target), file(temp_surface), file(bin_surface),  \
+	  file(bin_res)\
+	  from reports_ch
    errorStrategy 'finish'
-   script:
-   """
-    echo $bam
-    MLST_allele_checkr.pl $results $bam $strep_pyog
-   """
-}
-
-
-
-process getVelvetK {
-  input:
-    set val(base), file(f1), file(f2) from trimmed_ch2  
-  output:
-    tuple(base), stdout into velvet_k_ch
-  """
-     velvetk.pl --best --size 1.8M  $f1 $f2
-  """
-}
-
-
-process velvet {
-  cpus 2
-  input:
-    tuple val(base), file(f1), file(f2), val(vk) from trimmed_ch3.join(velvet_k_ch)
-  output:
-  tuple val(base), file(velvet_output) into \
-	velvet_bl_ch, velvet_lo_ch, velvet_emm_ch, velvet_gsres_ch, velvet_report_ch
-  script:
-     k = vk.trim()
-  """
-   export OMP_NUM_THREADS=${params.max_velvet_cpus}
-   VelvetOptimiser.pl -s $k -e $k -o "-scaffolding no" \
-                    -f "-shortPaired -separate -fastq $f1 $f2" -d velvet_output;
-  """
-}
-
-process blast {
-  input:
-    tuple val(base), file(contig), \
-  	  file(bl1), file(bl2), file(bl3), file(bl4), file(bl5), file(bl6), file(bl7) \
-	  from velvet_bl_ch.combine(blast_db_ch)
-  output:
-  tuple val(base), file(res) into blast_ch
-  script:
-    res="contig-vs-frwd_nucl.txt"
-    """
-     blastn -db blast_frwd_primr-nucl_DB -query velvet_output/contigs.fa -outfmt 6 -word_size 4 \
-          -out $res
-     """
-}
-
-
-process emmTyper {
-   input:
-     tuple val(base),  file(contig_v_frwd), file("velvet_output"),file(emm_db_dir) \
-  	   from blast_ch.join(velvet_emm_ch).combine(blast_emm_db_ch)
    output:
-     set val(base), file(out) into emm_res_ch
+      file(tabl_out) into reports mode 'flatten'
+   publishDir "${params.out_dir}/", mode: 'copy', overwrite: true    
    script:
-     out= "${base}_emm_type_results.txt"
-   """
-   core_emm_typer.pl $emm_db_dir/blast_emm_Gene-nucl_DB  $base 
-   """
+     tabl_out="${base}_TABLE_Isolate_Typing_results.txt"
+     """
+     spn_report.sh  $base $tabl_out 
+     """   
 }
 
 
-fqPairs4.join(trimmed_ch4)
-         .map { base, pair, trim1, trim2 -> [base, pair[0], pair[1], trim1, trim2] }
-	 .set { pbp_inputs_ch }
 
+low_coverage_ch = Channel.empty() // we may get from future impls of velvet
 
-
-system("LoTrac_target.pl -1 $fastq1 -2 $fastq2 -q $PBP_DB -S 2.2M -f -n $justName -o $outDir");
-
-process LoTrac {
-   input:
-      set val(base),  file(raw1), file(raw2), file(trim1), file(trim2),\
-          file(velvet_output)  from pbp_inputs_ch.join(velvet_lo_ch)
-      file(db)
-    output:
-      tuple val(base), file("*fasta") optional true into lotrac_output_ch
-      tuple val(base), val("query_seq_bad"), file("BAD_SEQ") optional true into query_length_prob_ch    
-   script:
-   """     
-   LoTrac_target.pl -1 $raw1 -2 $raw2 -q $db/GAS_bLactam_Ref.fasta \
-                     -S 2.2M -L 0.95 -f -n $base -o ./
-   """
+process reportGlobal {
+  input: 
+     file(reps) from reports.flatten().toList()
+     file(newpbps) from newpbp_ch.toList()
+     file(db)
+     val low_cov from low_coverage_ch.mix (query_length_prob_ch).map { it[0]+"-"+it[1] }.ifEmpty("None").toList()
+  output:
+     file(rep_name)
+  publishDir "${params.out_dir}", mode: 'copy', overwrite: true
+  script:
+      lc=(low_cov).join(",")
+      rep_name="gas-"+new java.text.SimpleDateFormat("yyyy-MM-dd-HHmmss").format(new Date())+".xlsx"
+      """
+      combined_report_generic.py A $suffix ${params.batch_dir} ${params.out_dir}  \
+                      $rep_name $lc
+      echo $low_cov > see
+      """
 }
-	 
+
+
+
 
 
 process multiqc {

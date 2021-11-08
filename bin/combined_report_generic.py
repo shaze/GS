@@ -47,7 +47,7 @@ for i, t in enumerate(table_data):
         curr_line[-2]=fq
     # makes assumptions about the input format
 
-table = pd.DataFrame(table_data,columns=table_heads)
+table = pd.DataFrame(table_data,columns=table_heads,dtype='object')
 table.to_csv(csvf,sep="\t")
 
 bins = glob.glob("*_BIN_*")
@@ -72,7 +72,7 @@ low_f = pd.DataFrame(low_cov,columns=["Sample"])
 
 
 
-with pd.ExcelWriter(outf,engine_kwargs={'strings_to_numbers': True}) as writer: 
+with pd.ExcelWriter(outf,engine_kwargs={'options': {'strings_to_numbers': True}}) as writer: 
     table.to_excel(writer, "TABLE")
     bin.to_excel(writer, "BIN")
     pdf.to_excel(writer,"PBP")
