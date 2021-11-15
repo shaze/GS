@@ -23,9 +23,14 @@ There is an extensive set of software requirements for this. You can either inst
 
 To install Docker or Singularity requires root privileges. Generally, Docker is not available or recommended in shared computing environments like HPC clusters but Singularity is widely available: you do not have to be root in order to _run_ Singularity.
 
-You need to run Singularity 3 for this workflow (note the default Ubuntu version is Singularity 2). Instructions can be found here: https://sylabs.io/guides/3.0/user-guide/installation.html on how to do this (look for `Install the Debian/Ubuntu package using apt`). On RHEL deliverables, you can find it in the OSG repo.
+You need to run Singularity 3 for this workflow.
+* A package is not available on Ubuntu and you have to install yourself. Instructions can be found here: https://sylabs.io/guides/3.0/user-guide/installation.html on how to do this (look for `Install the Debian/Ubuntu package using apt`). The instructions are clear and the steps are not onerous but if you have a single user machine and are root it may be easier to use Docker.
+* On RHEL versions, you can find it in the OSG repo. You need to add this repo to `/etc/yum.repos.d`
 
-To install Docker (remember you either need Docker or singularity), on Ubuntu install `docker.io`. On RHEL, the package is `docker`.
+To install Docker
+*  on Ubuntu install `docker.io`.
+*  On RHEL, the package is `docker`.
+*  On MacOS, you can install from here: https://docs.docker.com/desktop/mac/install/
 
 
 ## 1.3 Installing the workflow itself
@@ -60,7 +65,14 @@ In addition there are two _Nextflow_ parameters that you can use (especially the
 
 * `-profile slurm`: this causes each job to be submitted to the job scheduler and improves your parallelism. This is highly desirable.  The workflow provides a high degree of parallelism -- using `max_forks` of 37 with 37 input pairs, the workflow took  20 minutes of elapsed time (25 CPU hours running running several hundred jobs).  If you do *not* use this option, Nextflow executes this job on the computer that you happen to be running on.  Nextflow detects the number of actual cores you have and parallelises sensibly as much as possible (a minumum number of four cores is required).
 
-* `-profile resume`: if something crashed in a run for a reason other than an error in the workflow (say the computer's power went down) then you can use this to pick up execution from the point that execution failed (obviously if there's a bug in the workflow or a problem with the data the workflow will just crash again)
+* `-profile docker`: Run the workflow using Docker containers (see above). Docker must be installed on your system.
+
+* `-profile sigularity`: Run the workflow using Singularity containers (see above). Singularity must be installed on your system.
+
+* NB: _if_ you want to combine profiles, e.g. `slurm` and `docker`, say `-profile slurm,docker`.  
+
+* `-resume`: if something crashed in a run for a reason other than an error in the workflow (say the computer's power went down) then you can use this to pick up execution from the point that execution failed (obviously if there's a bug in the workflow or a problem with the data the workflow will just crash again)
+
 
 
 # 3. Running the `GAS_Scripts_Reference` workflow
@@ -129,7 +141,7 @@ This script has lots of intermediate files and output files. As an example, a te
 
 
 
-#5.  Advanced paramters
+# 5.  Advanced paramters
 
 * `max_forks`: a parameter limiting the parallelism. Essentially only this number of samples are allowed to be in the first phase of the workflow at the same time and acts as a throttle (there will in general be more than this number of processes happening in parallel as this throttles only the number of samples being processed in the first phase not the total work being done. The default is 10 --  the reason for this throttle is not so much to limit the number of jobs running (since you can rely on the scheduler to do this sensibly) but that although these files are not huge if a lot of work is being done in parallel the I/O performance can suffer. Experiment so that you can get things done quickly without making everyone else hate you.
 
@@ -138,7 +150,7 @@ This script has lots of intermediate files and output files. As an example, a te
 
 * `max_velvet_cpus`: how many CPUs should be used for Velvet. While Velvet has some parts that are parallelisable, a simple application of Amdahl's law shows that it is not worth allocating many threads to individual runs of Velvet. Since we are running Velvet on many different data sets, it makes more sense to run more of these independent jobs in parallel.
 
-#7. Creating a config file
+# 7. Creating a config file
 
 You can create a config file like this (say `demo.config`) and then run your code 
 
