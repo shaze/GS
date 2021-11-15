@@ -19,15 +19,20 @@ sudo chmod a+rx /usr/local/bin/nextflow
 
 ## 1.2 Bioinformatics software requirements
 
-There is an extensive set of software requirements for this. You can either install manually or we suggest using our containerised image with all the necessary requirements. In this case you need only install either _docker_ or _singularity_ and use the `-profile docker` or `-profile singularity` option. If you can't do this or want to install your own versions you can use the `dockers/Dockerfile` file as a guide of what to install.
+There is an extensive set of software requirements for this. You can either install manually or we suggest using our containerised image with all the necessary requirements. In this case you need only install either _docker_ *or* _singularity_ and use the `-profile docker` or `-profile singularity` option. If you can't do this or want to install your own versions you can use the `dockers/Dockerfile` file as a guide of what to install.
 
 To install Docker or Singularity requires root privileges. Generally, Docker is not available or recommended in shared computing environments like HPC clusters but Singularity is widely available: you do not have to be root in order to _run_ Singularity.
+
+### 1.2.1 If you choose Singularity
 
 You need to run Singularity 3 for this workflow.
 * A package is not available on Ubuntu and you have to install yourself. Instructions can be found here: https://sylabs.io/guides/3.0/user-guide/installation.html on how to do this (look for `Install the Debian/Ubuntu package using apt`). The instructions are clear and the steps are not onerous but if you have a single user machine and are root it may be easier to use Docker.
 * On RHEL versions, you can find it in the OSG repo. You need to add this repo to `/etc/yum.repos.d`
 
-To install Docker
+### 1.2.2 If you choose Docker
+
+Remember Docker is not meant for shared computer systems because of security constraints. It's a good option if you are the only user of your computer.
+
 *  on Ubuntu install `docker.io`.
 *  On RHEL, the package is `docker`.
 *  On MacOS, you can install from here: https://docs.docker.com/desktop/mac/install/
