@@ -1,6 +1,6 @@
-# strepB.nf
+# Streptococcus surveillance pipleines
 
-This is a work in progress of a Nextflow implementation of `https://github.com/BenJamesMetcalf/GBS_Scripts_Reference`. The bioinformatics has not changed only the wrapping. Any credit due to Ben and Sopio -- errors are mine.
+This is a work in progress of a Nextflow implementation of `https://github.com/BenJamesMetcalf/GBS_Scripts_Reference` and related piplines. The bioinformatics has not changed only the wrapping. Any credit due to Ben and Sopio -- errors are mine.
 
 
 # 1. Installing
@@ -19,7 +19,7 @@ sudo chmod a+rx /usr/local/bin/nextflow
 
 ## 1.2 Bioinformatics software requirements
 
-There is an extensive set of software requirements for this. You can either install manually or we suggest using our containerised image with all the necessary requirements. In this case you need only install either _docker_ *or* _singularity_ and use the `-profile docker` or `-profile singularity` option. If you can't do this or want to install your own versions you can use the `dockers/Dockerfile` file as a guide of what to install.
+There is an extensive set of software requirements for this. You can either install manually or we suggest using our containerised image with all the necessary requirements. In this case you need only install either `docker` **or** `singularity` and use the `-profile docker` or `-profile singularity` option. If you can't do this or want to install your own versions you can use the `dockers/Dockerfile` file as a guide of what to install.
 
 To install Docker or Singularity requires root privileges. Generally, Docker is not available or recommended in shared computing environments like HPC clusters but Singularity is widely available: you do not have to be root in order to _run_ Singularity.
 
@@ -36,6 +36,10 @@ Remember Docker is not meant for shared computer systems because of security con
 *  on Ubuntu install `docker.io`.
 *  On RHEL, the package is `docker`.
 *  On MacOS, you can install from here: https://docs.docker.com/desktop/mac/install/
+
+On Linux platforms, you also need to add your user to the _docker_ group, e.g.
+`sudo usermod -a -G docker scott` so that you can run Docker as a normal user. This isn'tneed on the Mac. 
+
 
 
 ## 1.3 Installing the workflow itself
