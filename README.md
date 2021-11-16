@@ -134,7 +134,7 @@ nextflow run shaze/GS/strepB.nf  --batch_dir august_data --out_dir /dataC/archiv
 The same remarks as for `strepA` apply for the various parameters except that if the reference DB is not in the default place (`/dataC/CRDM/GBS_Reference_DB`) then use the `--strepB_DB` option. 
 
 
-#5. Output
+# 5. Output
 
 The output directory contains
 * an Excel spreadsheet summarising the results
@@ -143,24 +143,25 @@ The output directory contains
 * a directory `new_mlst` with new MLST data
 
 
-#6. Cleaning up
+# 6. Cleaning up
 
 This script has lots of intermediate files and output files. As an example, a test data aset of 7GB led to 12GB of output data and another 43GB of intermediate files.  Nextflow uses the `work` directory to store all the intermediate files and this needs to be cleaned out but some care needs to be taken.
-* delete the work directory `/bin/rm -rf work`  (there are fancier ways of doing this but this works_.
+* delete the work directory `/bin/rm -rf work`  (there are fancier ways of doing this but this works).
 
 
 
 
-# 5.  Advanced paramters
+# 7.  Advanced paramters
 
-* `max_forks`: a parameter limiting the parallelism. Essentially only this number of samples are allowed to be in the first phase of the workflow at the same time and acts as a throttle (there will in general be more than this number of processes happening in parallel as this throttles only the number of samples being processed in the first phase not the total work being done. The default is 10 --  the reason for this throttle is not so much to limit the number of jobs running (since you can rely on the scheduler to do this sensibly) but that although these files are not huge if a lot of work is being done in parallel the I/O performance can suffer. Experiment so that you can get things done quickly without making everyone else hate you.
+* `max_forks`: a parameter limiting the parallelism. Nextflow understands your environment (whether you are running on a stand-alone computer or on a cluster) and handles the parallelism appropriately. If you have an 8-core machine it can run up to 8 processes at the same time for you; if you have a cluster with a scheduler it will interact with the scheduler to run many jobs in parallel.  However, there are times when you need to tell Nextflow to _restrict_ the amount of parallelism. In this pipeline's case, depending on your disk system, disk performance may be a reason to do so. You may have 1000 CPUs in the cluster but if if they each try to read a file on the same disk, the disk will be very, very slow and you will become very unpopular. 
+With `max_forks`, only this number of samples are allowed to be in the first phase of the workflow at the same time and acts as a throttle (there will in general be more than this number of processes happening in parallel as this throttles only the number of samples being processed in the first phase not the total work being done. The default is 10 --  the reason for this throttle is not so much to limit the number of jobs running (since you can rely on the scheduler to do this sensibly) but that although these files are not huge if a lot of work is being done in parallel the I/O performance can suffer. Experiment so that you can get things done quickly without making everyone else hate you.
 
 
 * `suffix`: default is `fastq.gz`. The workflow assumes that all the fastq files end with this suffix. If you have a different suffix, then use this parameter, for example `--suffix fq.gz`. All input files must have the same suffix.
 
 * `max_velvet_cpus`: how many CPUs should be used for Velvet. While Velvet has some parts that are parallelisable, a simple application of Amdahl's law shows that it is not worth allocating many threads to individual runs of Velvet. Since we are running Velvet on many different data sets, it makes more sense to run more of these independent jobs in parallel.
 
-# 7. Creating a config file
+# 8. Creating a config file
 
 You can create a config file like this (say `demo.config`) and then run your code 
 
