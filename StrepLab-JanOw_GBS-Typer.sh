@@ -45,6 +45,7 @@ fastq1_trimd=cutadapt_"$just_name"_S1_L001_R1_001.fastq
 fastq2_trimd=cutadapt_"$just_name"_S1_L001_R2_001.fastq
 cutadapt -b AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -q 20 --minimum-length 50 --paired-output temp2.fastq -o temp1.fastq $readPair_1 $readPair_2
 cutadapt -b AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT -q 20 --minimum-length 50 --paired-output $fastq1_trimd -o $fastq2_trimd temp2.fastq temp1.fastq
+
 rm temp1.fastq
 rm temp2.fastq
 

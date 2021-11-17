@@ -68,6 +68,18 @@ do
     printf "$line\t" | tr ',' '\t' >> "$tabl_out"
 done < "RES-MIC_$base"
 
+if [[ -e $(echo ./velvet_output/*_Logfile.txt) ]]
+then
+    vel_metrics=$(echo ./velvet_output/*_Logfile.txt)
+    print "velvet metrics file: $vel_metrics\n";
+    velvetMetrics.pl -i "$vel_metrics";
+    line=$(cat velvet_qual_metrics.txt | tr ',' '\t')
+    printf "$line\t" >> "$tabl_out"
+    #pwd | xargs -I{} echo {}"/velvet_output/contigs.fa" >> "$tabl_out"
+else
+    printf "NA\tNA\tNA\tNA\t$readPair_1\tNA\n" >> "$tabl_out"
+fi
+
 #printf "*\t*\t*\t*\t*\t*" >> $tabl_out
 printf "\n" >> "$tabl_out"
 

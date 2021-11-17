@@ -45,8 +45,8 @@ process cutAdapt2 {
   set val(base), file(trim1), file(trim2) into \
          trimmed_ch1,trimmed_ch2,trimmed_ch3,trimmed_ch4
   script:
-   trim1="cutadapt_${base}_S1_L001_R1_001.fastq"
-   trim2="cutadapt_${base}_S1_L001_R2_001.fastq"
+   trim1="cutadapt_${base}_R1_001.fastq"
+   trim2="cutadapt_${base}_R2_001.fastq"
    """
    cutadapt --cores 4 -b AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT -q 20 --minimum-length 50 --paired-output $trim1 -o $trim2  $r1 $r2
    """

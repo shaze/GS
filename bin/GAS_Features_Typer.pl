@@ -217,6 +217,7 @@ while(<MYINPUTFILE>) {
             if ($Feat_Col{"EMM_Family"} eq "neg") {
                 $Feat_Col{"EMM_Family"} = $feat_fullgene[2];
             } else {
+		my $ex = $Feat_Col{"EMM_Family"};
                 my $new_val = $Feat_Col{"EMM_Family"}.":".$feat_fullgene[2];
                 $Feat_Col{"EMM_Family"} = $new_val;
             }
