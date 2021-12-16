@@ -57,7 +57,7 @@ process makeBlastDBprimer {
       file(x) from bowtie_indices.toList() // this is just a hack to have a barrier
     output:
      file("${bl_out}*") into blast_db_ch
-    storeDir db_dir
+     //storeDir db_dir
     script:
        bl_out="blast_frwd_primr-nucl_DB"
      """

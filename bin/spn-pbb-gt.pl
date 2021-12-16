@@ -337,5 +337,4 @@ print $fh "$outName\t$code_1A:$code_2B:$code_2X\n";
 close $fh;
 
 
-###Delete Temp Files###
-#unlink(TEMP*);
+

@@ -7,7 +7,8 @@ use Data::Dumper;
 use Getopt::Std;
 use File::Copy qw(copy);
 use Env;
-use lib $ENV{MODULESHOME}."/init";
+#use lib $ENV{MODULESHOME}."/init";
+use lib "/usr/share/Modules/init/";
 use perl;
 
 ###MODULE LOAD###
@@ -310,13 +311,10 @@ my @Bin_Res_arr = (0) x 20;
 my $outNameRES = "RES_".$outName;
 my $out_nameARG = "ARG_".$outName;
 my $out_nameRESFI = "RESFI_".$outName;
-print("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $outNameRES --log --save_scores --min_coverage 99.9 --max_divergence 5 --gene_db $res_DB");
 system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $outNameRES --log --save_scores --min_coverage 99.9 --max_divergence 5 --gene_db $res_DB");
 ###Type ARG-ANNOT Resistance Genes###
-print("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $out_nameARG --log --save_scores --min_coverage 70 --max_divergence 30 --gene_db $ref_dir/ARGannot_r1.fasta");
 system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $out_nameARG --log --save_scores --min_coverage 70 --max_divergence 30 --gene_db $ref_dir/ARGannot_r1.fasta");
 ###Type ResFinder Resistance Gene###
-print("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $out_nameRESFI --log --save_scores --min_coverage 70 --max_divergence 30 --gene_db $ref_dir/ResFinder.fasta");
 system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $out_nameRESFI --log --save_scores --min_coverage 70 --max_divergence 30 --gene_db $ref_dir/ResFinder.fasta");
 #=cut
 
@@ -324,32 +322,14 @@ my @TEMP_RES_bam = glob("RES_*\.sorted\.bam");
 my @TEMP_RES_fullgene = glob("RES_*__fullgenes__*__results\.txt");
 my $RES_bam = $TEMP_RES_bam[0];
 my $RES_full_name = $TEMP_RES_fullgene[0];
-print "RES_full_name=$RES_full_name\n";
 print "res bam is: $RES_bam || res full gene $RES_full_name\n";
 (my $RES_vcf = $RES_bam) =~ s/\.bam/\.vcf/g;
 (my $RES_bai = $RES_bam) =~ s/\.bam/\.bai/g;
 
 my @TEMP_ARG_fullgene = glob("ARG_*__fullgenes__*__results\.txt");
-my $ta_len = scalar @TEMP_ARG_fullgene;
-my $ARG_full_name="ARG_FULL_NAME";
-if ($ta_len == 0) {
-   `touch $ARG_full_name`;
-} else {
-    $ARG_full_name = $TEMP_ARG_fullgene[0];
-}
-
-
-my $RESFI_full_name="RESFI_full_name";
+my $ARG_full_name = $TEMP_ARG_fullgene[0];
 my @TEMP_RESFI_fullgene = glob("RESFI_*__fullgenes__*__results\.txt");
-$ta_len = scalar @TEMP_RESFI_fullgene;
-if ($ta_len == 0) {
-    `touch $RESFI_full_name`;
-} else {
-   $RESFI_full_name = $TEMP_RESFI_fullgene[0];
-}
-
-
-
+my $RESFI_full_name = $TEMP_RESFI_fullgene[0];
 my $merged_net = "ARG-RESFI_fullgenes_results.txt";
 #copy $ARG_full_name, $merged_net;
 system("tail -n+2 $ARG_full_name > $merged_net");
@@ -384,7 +364,6 @@ my %Res_Targets = (
 
 ###Type the Presence/Absence Targets###
 open(MYINPUTFILE, "$RES_full_name");
-print "Open result is <$?>\n";
 while(<MYINPUTFILE>) {
     next if $. < 2;
     my $line = $_;
@@ -684,7 +663,11 @@ if ($Res_Targets{"23S3"} eq "pos") {
 ###The FOLA-1 marker for tmR resistance may contain mosiac regions and must be extracted from the genome assembly###
 my $REF_seq = extractFastaByID("7__FOLA__FOLA-1__7","$res_DB");
 `echo "$REF_seq" > TEMP_FOLA_Ref.fna`;
+#module "unload perl/5.22.1";
+#module "load perl/5.16.1-MT";
 system("LoTrac_target.pl -1 $fastq1 -2 $fastq2 -q TEMP_FOLA_Ref.fna -S 2.2M -f -n $outName -o $outDir");
+#module "unload perl/5.16.1-MT";
+#module "load perl/5.22.1";
 my $FOLA_file = glob("EXTRACT_*FOLA*.fasta");
 my $FOLA_error = glob("ERROR_*FOLA*.fasta");
 my @FOLA_output;
@@ -850,7 +833,6 @@ open(MYINPUTFILE, "$RES_full_name");
 while(<MYINPUTFILE>) {
     next if $. < 2;
     my $line = $_;
-    next if ($line =~ /depth/); # SH -- remove header
     chomp($line);
     #print "$line\n";
     my @feat_fullgene;

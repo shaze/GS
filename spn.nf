@@ -14,31 +14,36 @@ params.contamination_level=10
 contamination_level=params.contamination_level
 mod_blactam=file("${db_dir}/MOD_bLactam_resistance.fasta")
 
+strep_pneum=file("${db_dir}/Streptococcus_pneumoniae.fasta")
+strep_pneum_txt=file("{db_dir}/spneumoniae.txt")
+
+sero_gene_db = file("${db_dir}/SPN_Sero_Gene-DB_Final.fasta")
 
 adapter1="AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC"
-
 adapter2="AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT"
 
 
 Channel.fromFilePairs("${params.batch_dir}/*_R{1,2}_001.fastq.gz").
       ifEmpty { println "No files  match pattern: ${params.batch_dir}/*_R{1,2}_001.fastq.gz";
                 System.exit(10) }.
-      into { fqPairs1 }
+       into { fqPairs1; fqPairs2 }
 
 
-process sampleSubSeq {
-  input:
-    tuple val(base), file(pair) from fqPairs1
-  output:
-    tuple val(base), file("${out}_1.fq.gz"), file("${out}_2.fq.gz")\
-           into sample_pairs_1_ch, sample_pairs_2_ch, sample_pairs_3_ch
-  script:
-    out="${base}_s"
-  """
-     seqtk sample ${pair[0]} 600000 | gzip > ${out}_1.fq.gz
-     seqtk sample ${pair[1]} 600000 | gzip > ${out}_2.fq.gz
-  """
-}
+
+//  Used for the older workflow
+//process sampleSubSeq {
+//   input:
+//     tuple val(base), file(pair) from fqPairs1
+//   output:
+//     tuple val(base), file("${out}_1.fq.gz"), file("${out}_2.fq.gz")\
+//            into sample_pairs_1_ch, sample_pairs_2_ch, sample_pairs_3_ch
+//   script:
+//     out="${base}_s"
+//   """
+//      seqtk sample ${pair[0]} 600000 | gzip > ${out}_1.fq.gz
+//      seqtk sample ${pair[1]} 600000 | gzip > ${out}_2.fq.gz
+//   """
+// }
 
 
 pbp_types = ["1A","2B","2X"]
@@ -64,7 +69,7 @@ process cutAdapt1 {
   cpus 4
   errorStrategy 'finish'
   input:
-   set val(base), file(pair) from sample_pairs_1_ch
+   set val(base), file(pair) from fqPairs1
   output:
    set val(base), file("temp1.fastq"), file("temp2.fastq") into trim1_ch
   script:
@@ -110,13 +115,71 @@ process fastQC {
     """
 }
 
+
+
+process srstP {
+    maxForks 2*max_forks+2 
+    cpus 4
+    input:
+      set val(base), file(pair) from fqPairs2
+      file(strep_pneum)
+      file(strep_pneum_txt)
+    output:
+      set val(base), file(results), file("${name}*bam") into bam_src_ch
+      set val(base),  file(results) into bam_src1_ch
+    script:
+      name = "MLST_$base"
+      results = "${name}__mlst__Streptococcus_agalactiae__results.txt"
+      """
+        srst2 --threads 4  --samtools_args '\\-A' --mlst_delimiter '_' --input_pe $pair --output $name --save_scores \
+              --mlst_db $strep_pneum --mlst_definitions $strep_pneum_txt --min_coverage 99.999
+      """
+}
+
+
+process MLSTalleleChecker {
+   input:
+      set val(base), file(results), file(bam) from bam_src_ch
+      file(strep_pneum)
+   output:
+      file ("${base}_new_mlst.txt") optional true into new_mlst_ch
+      publishDir "${params.out_dir}/new_mlst/", mode:params.publish, overwrite:true
+   script:
+   """
+    echo $bam
+    MLST_allele_checkr.pl $results $bam $strep_pneum
+    if [ -e Check_Target_Sequence.txt ]; then
+       cp Check_Target_Sequence.txt  ${base}_new_mlst.txt
+    fi
+   """
+}
+
+
+
+process seroTyper {
+   maxForks max_forks
+   input:
+     set val(base),  file(pair) from fqPairs3
+     file(sero_gene_db)
+   output:
+     set val(base), file(result) into sero_res_ch
+   script:
+   result="TEMP_SeroType_Results.txt"
+   """
+   SPN_Serotyper.pl -1 ${pair[0]} -2 ${pair[1]} -r $sero_gene_db -n $base
+   """
+}
+
+
+
+
 process getVelvetK {
   input:
     set val(base), file(f1), file(f2) from trimmed_ch2  
   output:
     tuple(base), stdout into velvet_k_ch
   """
-     velvetk.pl --best --size 1.8M  $f1 $f2
+     velvetk.pl --best --size 2.2M  $f1 $f2
   """
 }
 
