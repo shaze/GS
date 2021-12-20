@@ -1,341 +1,133 @@
 #!/bin/bash
 
 base=$1
-tabl_out=$2
-sampl_out=$3
+sampl_out=$2
+tabl_out=$3
 
-
-
+bin_out="BIN_Isolate_Typing_results.txt"
 
 printf "$base\t" >> "$tabl_out"
 printf "\tSerotype:\n" >> "$sampl_out"
-lineNum=$(cat TEMP_SeroType_Results.txt | wc -l)
-if [[ "$lineNum" -eq 1 ]]
-then
-    #if the file only contains the header line then no serotype was found
-    firstLine=$(head -n1 TEMP_SeroType_Results.txt)
-    printf "\t\t$firstLine\n\t\tNo_Serotype\n" >> "$sampl_out"
-    printf "No_Serotype" >> "$tabl_out"
-else
-    count=0
-    misc_target=()
-    while read -r line
-    do
-        count=$(( $count + 1 ))
-        if [[ "$count" -eq 1 ]]
-        then
-	    #print the header line to the 'SAMPL' output file
-            printf "\t\t$line\n" >> "$sampl_out"
-        else
-            #If misc. resistance target is greater than the contamination threshold then add that
-            #misc. resistance target to the output array 'misc_target'
-            printf "\t\t$line\n" >> "$sampl_out"
-            justTarget=$(echo "$line" | awk -F"\t" '{print $3}')
-	    Depth=$(echo "$line" | awk -F"\t" '{print $4}')
-	    if [[ $Depth = *"/"* ]]
-	    then
-		depth1=$(echo $Depth | cut -f1 -d/)
-		depth2=$(echo $Depth | cut -f2 -d/)
-		justDepth=$([ $depth1 '<' $depth2 ] && echo "$depth1" || echo "$depth2")
-	        #echo "Sero duel target: $depth1 | $depth2 | $justDepth" > TEST_sero_table_out.txt
-		#min=$([ $var1 '<' $var2 ] && echo "$var1" || echo "$var2")
-	    else
-		justDepth=$Depth
-	    fi
-	    justMatchType=$(echo "$line" | awk -F"\t" '{print $2}')
-            if [[ $(echo "$justDepth > $contamination_level" | bc) -eq 1 ]]
-            then
-		echo "Target $justTarget is a match"
-		#misc_target+=("$justTarget($justDepth|$justMatchType)")
-		#printf "$justTarget;" >> TEMP_table_results.txt
-		misc_target+=("$justTarget")
-	    fi
-        fi
-    done < TEMP_SeroType_Results.txt
-    #if the output array 'misc_target' is not empty, print out the sorted types to the 'TEMP_table_results.txt' file
-    if [ ${#misc_target[@]} -eq 0 ];
-    then
-        printf "No_Serotype" >> "$tabl_out"
-    else
-        printf '%s\n' "${misc_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g'
-        printf '%s\n' "${misc_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g' >> "$tabl_out"
-    fi
-fi
-printf "\t" >> "$tabl_out"
-EOF
 
-: <<EOF
-###MLST OUTPUT###
-printf "\tMLST:\n" >> "$sampl_out"
-count=0
+bin_out="BIN_Isolate_Typing_results.txt"
+printf "$base\t" >> "$tabl_out"
+printf "$base," >> "$bin_out"
+
+###Serotype Output###
+sero_out="NF"
+pili_out="neg"
 while read -r line
 do
-    count=$(( $count + 1 ))
-    if [[ "$count" -eq 1 ]]
+    if [[ -n "$line" ]]
     then
-        printf "\t\t$line\n" >> "$sampl_out"
-    else
-        printf "\t\t$line\n" >> "$sampl_out"
-        MLST_tabl=$(echo "$line" | cut -f2-9)
-        printf "$MLST_tabl\t" >> "$tabl_out"
-    fi
-done < "$out_nameMLST"__mlst__Streptococcus_pneumoniae__results.txt
-EOF
-
-###PBP_ID OUTPUT###
-printf "\tPBP_ID Code:\n" >> "$sampl_out"
-lineNum=$(cat TEMP_pbpID_Results.txt | wc -l)
-if [[ "$lineNum" -eq 1 ]]
-then
-    #if the file only contains the header line then no PBP results were found
-    firstLine=$(head -n1 TEMP_pbpID_Results.txt)
-    printf "\t\t$firstLine\n\t\tNo_PBP_Type\n" >> "$sampl_out"
-    #printf "$firstLine\t" >> TEMP_table_title.txt
-    printf "No_PBP_Type\t" >> "$tabl_out"
-else
-    count=0
-    while read -r line
-    do
-	count=$(( $count + 1 ))
-        #justPBPs=$(echo "$line" | cut -f2-4)
-	justPBPs=$(echo "$line" | awk -F"\t" '{print $2}')
-	if [[ "$count" -eq 1 ]]
+        justTarget=$(echo "$line" | awk -F"\t" '{print $4}')
+	if [[ "$justTarget" == "PI-1" ]]
 	then
-            printf "\t\t$justPBPs\n" >> "$sampl_out"
-            #printf "$justPBPs\t" >> TEMP_table_title.txt
-	else
-            printf "\t\t$justPBPs\n" >> "$sampl_out"
-            printf "$justPBPs\t" >> "$tabl_out"
-	fi
-    done < TEMP_pbpID_Results.txt
-fi
-#EOF
-
-###MISC. RESISTANCE###
-printf "\tMisc. GBS Resistance:\n" >> "$sampl_out"
-lineNum=$(cat TEMP_miscR_Results.txt | wc -l)
-misc_contamination_level=7
-if [[ "$lineNum" -eq 1 ]]
-then
-    #if the file only contains the header line then no misc. resistance were found
-    firstLine=$(head -n1 TEMP_miscR_Results.txt)
-    printf "\t\t$firstLine\n\t\tNo_Resistance\n" >> "$sampl_out"
-    #printf "$firstLine\t" >> TEMP_table_title.txt
-    if grep -q failed MISC_*.log;
-    then
-        printf "**Failed Read Mapping - Results not accurate**" >> "$tabl_out"
-    else
-	printf "No_Resistance" >> "$tabl_out"
-    fi
-else
-    count=0
-    misc_target=()
-    while read -r line
-    do
-        count=$(( $count + 1 ))
-        if [[ "$count" -eq 1 ]]
-        then
-	    #print the header line to the 'SAMPL' output file
-            printf "\t\t$line\n" >> "$sampl_out"
-            #printf "$line\t" >> TEMP_table_title.txt
-        else
-            #If misc. resistance target is greater than the contamination threshold then add that
-            #misc. resistance target to the output array 'misc_target'
-            printf "\t\t$line\n" >> "$sampl_out"
-            justTarget=$(echo "$line" | awk -F"\t" '{print $1}')
-            justDepth=$(echo "$line" | awk -F"\t" '{print $4}')
-            justMatchType=$(echo "$line" | awk -F"\t" '{print $2}')
-            if [[ $(echo "$justDepth > $misc_contamination_level" | bc) -eq 1 ]] || [[ "$justDepth" == "NA" ]]
+            if [[ "$pili_out" == "neg" ]]
             then
-		#this condition checks if the target is one of the extraction alleles. If so, it will append (extract) to output
-		#if [[ "$justMatchType" == "imperfect" && " ${extract_arr[@]} " =~ " ${justTarget} " ]]
-		if [[ "$line" =~ "Extract" ]]
-		then
-                    echo "Target $justTarget is a match but needs extraction"
-		    #misc_target+=("$justTarget($justDepth|$justMatchType)")
-		    #printf "$justTarget;" >> TEMP_table_results.txt
-		    misc_target+=("$justTarget(extract)")
-		else
-		    echo "Target $justTarget is a match"
-		    misc_target+=("$justTarget($justMatchType)")
-		    #misc_target+=("$justTarget")
-		fi
-	    fi
-        fi
-    done < TEMP_miscR_Results.txt
-    #if the output array 'misc_target' is not empty, print out the sorted types to the 'TEMP_table_results.txt' file
-    if grep -q failed MISC_*.log;
-    then
-        printf "**Failed Read Mapping - Results not accurate**" >> "$tabl_out"
-    else
-	if [ ${#misc_target[@]} -eq 0 ];
+		pili_out="1"
+            elif [[ "$pili_out" == "2" ]]
+	    then
+		pili_out="1:2"
+            fi
+	elif [[ "$justTarget" == "PI-2" ]]
 	then
-            printf "No_Resistance" >> "$tabl_out"
-	else
-            printf '%s\n' "${misc_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g'
-            printf '%s\n' "${misc_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g' >> "$tabl_out"
+            if [[ "$pili_out" == "neg" ]]
+            then
+                pili_out="2"
+            elif [[ "$pili_out" == "1" ]]
+	    then
+                pili_out="1:2"
+            fi
+        else
+            if [[ "$sero_out" == "NF" ]]
+            then
+		sero_out="$justTarget"
+            else
+		sero_out="$sero_out;$justTarget"
+            fi
 	fi
     fi
-fi
-printf "\t" >> "$tabl_out"
+done <<< "$(sed 1d OUT_SeroType_Results.txt)"
+printf "$sero_out\t$pili_out\t" >> "$tabl_out"
+printf "$sero_out,$pili_out\t" >> "$bin_out"
 
-###Surface / Secretory Protein Output (Not including T-Antigens)###
-#printf "\tProtein Targets:\n" >> "$sampl_out"
-#lineNum=$(cat TEMP_protein_Results.txt | wc -l)
-#if [[ "$lineNum" -eq 1 ]]
-#then
-#    #if the file only contains the header line then no surface/secretory targets were typed
-#    firstLine=$(head -n1 TEMP_protein_Results.txt)
-#    printf "\t\t$firstLine\n\t\tNo_Protein_Targets\n" >> "$sampl_out"
-#    printf "No_Protein_Targets" >> "$tabl_out"
-#else
-#    count=0
-#    prot_target=()
-#    while read -r line
-#    do
-#        count=$(( $count + 1 ))
-#        if [[ "$count" -eq 1 ]]
-#        then
-#            #print the header line to the 'SAMPL' output file
-#            printf "\t\t$line\n" >> "$sampl_out"
-#        else
-#            #If surface/secretory target is greater than the contamination threshold then add that
-#            #target to the output array 'prot_target'
-#            printf "\t\t$line\n" >> "$sampl_out"
-#            justTarget=$(echo "$line" | awk -F"\t" '{print $1}')
-#            justDepth=$(echo "$line" | awk -F"\t" '{print $4}')
-#            if [[ $(echo "$justDepth > $contamination_level" | bc) -eq 1 ]]
-#            then
-#                echo "Target $justTarget is a match"
-#                #printf "$justTarget-($justDepth);" >> TEMP_table_results.txt
-#                #prot_target+=("$justTarget($justDepth)")
-#		prot_target+=("$justTarget")
-#            fi
-#        fi
-#    done < TEMP_protein_Results.txt
-#    #done < TEMP_no-Tantigen_Results.txt
-#    #if the output array 'prot_target' is not empty, print out the sorted types to the 'TEMP_table_results.txt' file
-#    if [ ${#prot_target[@]} -eq 0 ];
+###MLST OUTPUT###
+sed 1d "$out_nameMLST"__mlst__Streptococcus_pneumoniae__results.txt | while read -r line
+do
+    MLST_tabl=$(echo "$line" | cut -f2-9)
+    echo "MLST line: $MLST_tabl\n";
+    printf "$MLST_tabl\t" >> "$tabl_out"
+    MLST_val=$(echo "$line" | awk -F" " '{print $2}')
+    printf "$MLST_val," >> "$bin_out"
+done
+
+###PBP_ID Output###
+justPBPs="NF"
+sed 1d TEMP_pbpID_Results.txt | while read -r line
+do
+    if [[ -n "$line" ]]
+    then
+        justPBPs=$(echo "$line" | awk -F"\t" '{print $2}' | tr ':' '\t')
+        justPBP_BIN=$(echo "$line" | awk -F"\t" '{print $2}' | tr ':' ',')
+    fi
+    printf "$justPBPs\t" >> "$tabl_out"
+    printf "$justPBP_BIN," >> "$bin_out"
+done
+
+###bLactam Predictions###
+#sed 1d "BLACTAM_MIC_RF.txt" | while read -r line
+#sed 1d "BLACTAM_MIC_RF_with_SIR.txt" | while read -r line
+#do
+#    pbpID=$(tail -n1 "TEMP_pbpID_Results.txt" | awk -F"\t" '{print $2}')
+#    if [[ ! "$pbpID" =~ .*NF.* ]] && [[ ! "$pbpID" =~ .*NEW.* ]]
 #    then
-#        printf "No_Protein_Targets" >> "$tabl_out"
+#	echo "No NF or NEW outputs for PBP Type"
+#	bLacTab=$(echo "$line" | tr ' ' '\t')
+#	printf "$bLacTab\t" >> "$tabl_out"
+#	bLacCom=$(echo "$line" | tr ' ' ',')
+#	printf "$bLacCom," >> "$bin_out"
 #    else
-#        printf '%s\n' "${prot_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g'
-#        printf '%s\n' "${prot_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g' >> "$tabl_out"
+#	echo "One of the PBP types has an NF or NEW"
+#	printf "NF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\t" >> "$tabl_out"
+#	printf "NF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF," >> "$bin_out"
 #    fi
-#fi
-#printf "\t" >> "$tabl_out"
+#done
 
-: <<EOF
-###ARG-ANNOT and ResFinder Resistance Gene Typing Output###
-printf "\tGeneral Resistance Targets:\n\t\tDB_Target\tMatch_Type\tDepth\n" >> "$sampl_out"
-genRes_target=()
-if [[ -s "$out_nameARG"__fullgenes__ARGannot_r1__results.txt ]]
+pbpID=$(tail -n1 "TEMP_pbpID_Results.txt" | awk -F"\t" '{print $2}')
+if [[ ! "$pbpID" =~ .*NF.* ]] #&& [[ ! "$pbpID" =~ .*NEW.* ]]
 then
-    count=0
-    while read -r line
-    do
-        count=$(( $count + 1 ))
-        if [[ "$count" -ne 1 ]]
-        then
-	    isIdentical="identical"
-	    justDiffs=$(echo "$line" | awk -F"\t" '{print $7}')
-	    if [[ -n "$justDiffs" ]]
-	    then
-		isIdentical="imperfect"
-	    fi
-	    justTarget=$(echo "$line" | awk -F"\t" '{print $4}')
-	    justDepth=$(echo "$line" | awk -F"\t" '{print $6}')
-	    #printf "\t\tARGannot_r1_$justTarget\t$isIdentical\t$justDepth\n" >> "$sampl_out"
-	    printf "\t\tARG_$justTarget\t$isIdentical\t$justDepth\n" >> "$sampl_out"
-	    if [[ $(echo "$justDepth > $contamination_level" | bc) -eq 1 ]]
-	    then
-		echo "Target $justTarget is a match"
-		genRes_target+=("ARG_$justTarget")
-	    fi
-	fi
-    done < "$out_nameARG"__fullgenes__ARGannot_r1__results.txt
-fi
-if [[ -s "$out_nameRES"__fullgenes__ResFinder__results.txt ]]
-then
-    count=0
-    while read -r line
-    do
-        count=$(( $count + 1 ))
-        if [[ "$count" -ne 1 ]]
-        then
-	    isIdentical="identical"
-	    justDiffs=$(echo "$line" | awk -F"\t" '{print $7}')
-	    if [[ -n "$justDiffs" ]]
-	    then
-		isIdentical="imperfect"
-	    fi
-	    justTarget=$(echo "$line" | awk -F"\t" '{print $4}')
-	    justDepth=$(echo "$line" | awk -F"\t" '{print $6}')
-	    #printf "\t\tResFinder_$justTarget\t$isIdentical\t$justDepth\n" >> "$sampl_out"
-	    printf "\t\tRF_$justTarget\t$isIdentical\t$justDepth\n" >> "$sampl_out"
-	    if [[ $(echo "$justDepth > $contamination_level" | bc) -eq 1 ]]
-	    then
-		echo "Target $justTarget is a match"
-		genRes_target+=("RF_$justTarget")
-	    fi
-	fi
-    done < "$out_nameRES"__fullgenes__ResFinder__results.txt
-fi
-#if the output array 'genRes_target' is not empty, print out the sorted types to the 'TEMP_table_results.txt' file
-if [ ${#genRes_target[@]} -eq 0 ];
-then
-    printf "No_Gen_Resistance_Targets" >> "$tabl_out"
-    printf "\t\tNo_Gen_Resistance_Targets\n" >> "$sampl_out"
+    echo "No NF outputs for PBP Type"
+    bLacTab=$(tail -n1 "BLACTAM_MIC_RF_with_SIR.txt" | tr ' ' '\t')
+    printf "$bLacTab\t" >> "$tabl_out"
+    #bLacCom=$(echo "$line" | tr ' ' ',')
+    #printf "$bLacCom," >> "$bin_out"
 else
-    printf '%s\n' "${genRes_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g'
-    printf '%s\n' "${genRes_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g' >> "$tabl_out"
+    echo "One of the PBP types has an NF"
+    printf "NF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\t" >> "$tabl_out"
+    #printf "NF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF," >> "$bin_out"
 fi
-printf "\t" >> "$tabl_out"
 
-###PlasmidFinder Plasmid Typing Output###
-printf "\tPlasmid Prediction Targets:\n\t\tTarget\tMatch_Type\tDepth\n" >> "$sampl_out"
-if [[ -s "$out_namePLAS"__fullgenes__PlasmidFinder__results.txt ]]
-then 
-    count=0
-    while read -r line
-    do
-	count=$(( $count + 1 ))
-	if [[ "$count" -ne 1 ]]
-	then
-	    isIdentical="identical"
-	    justDiffs=$(echo "$line" | awk -F"\t" '{print $7}')
-	    if [[ -n "$justDiffs" ]]
-	    then
-		isIdentical="imperfect"
-	    fi
-	    justTarget=$(echo "$line" | awk -F"\t" '{print $4}')
-	    justDepth=$(echo "$line" | awk -F"\t" '{print $6}')
-	    printf "\t\t$justTarget\t$isIdentical\t$justDepth\n" >> "$sampl_out"
-	    if [[ $(echo "$justDepth > $contamination_level" | bc) -eq 1 ]]
-	    then
-		echo "Target $justTarget is a match"
-		plas_target+=("$justTarget")
-	    fi
-	fi
-    done < "$out_namePLAS"__fullgenes__PlasmidFinder__results.txt
-fi
-#if the output array 'genRes_target' is not empty, print out the sorted types to the 'TEMP_table_results.txt' file
-if [ ${#plas_target[@]} -eq 0 ];
+
+###Resistance Targets###
+while read -r line
+do
+    #RES_targ=$(echo "$line" | cut -f2)
+    #printf "$RES_targ\t" >> "$tabl_out"
+    printf "$line\t" | tr ',' '\t' >> "$tabl_out"
+done < RES-MIC_"$base"
+
+if [[ -e $(echo ./velvet_output/*_Logfile.txt) ]]
 then
-    printf "No_Plasmid_Targets" >> "$tabl_out"
-    printf "\t\tNo_Plasmid_Targets" >> "$sampl_out"
+    vel_metrics=$(echo ./velvet_output/*_Logfile.txt)
+    print "velvet metrics file: $vel_metrics\n";
+    velvetMetrics.pl -i "$vel_metrics";
+    line=$(cat velvet_qual_metrics.txt | tr ',' '\t')
+    printf "$line\t" >> "$tabl_out"
+
+    printf "$readPair_1\t" >> "$tabl_out";
+    pwd | xargs -I{} echo {}"/velvet_output/contigs.fa" >> "$tabl_out"
 else
-    printf '%s\n' "${plas_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g'
-    printf '%s\n' "${plas_target[@]}" | sort | tr '\n' ';' | sed 's/;$//g' >> "$tabl_out"
+    printf "NA\tNA\tNA\tNA\t$readPair_1\tNA\n" >> "$tabl_out"
 fi
-EOF
-printf "\n\n" >> "$sampl_out"
-printf "\n" >> "$tabl_out"
-
-rm *.fastq.gz
-rm cutadapt_*.fastq
-rm *.sam
-rm *.bam
-rm *.pileup
-
 
