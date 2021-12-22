@@ -51,6 +51,18 @@ This takes one line
 
 Note that if the workflow is updated when you run the workflow you will get a message like "NOTE: Your local project version looks outdated - a different revision is available in the remote repository". If you want to upgrade to the latest version do another `nextflow pull shaze/GS` 
 
+
+## 1.4 Getting Reference Databases
+
+The workflows require some reference databases (about 400MB in total). There are three databases (each placed in a separate directory) 
+
+The easiest way of getting them is to say
+
+`nexflow run shaze/GS/fetchDB.nf --target XXX`
+
+Replace XXX with the name of the directory which you want to store the databases. This directory can exist already but if it doesn't exist will be created.  For example, if I say `nexflow run shaze/GS/fetchDB.nf --target /data/strep` then (whether or not that directory previously exists), then the three databases will be created and we will not have three directories/databases, viz.,  `/data/strep/GAS_ReferenceDB`, `/data/strep/GBS_ReferenceDB` and `/data/strep/SPN_Reference_DB`. You can use this for the workflow parameters as described below.
+
+
 # 2. Instructions for running
 
 
@@ -60,7 +72,7 @@ You need the following three parameters (defaults are given in square brackets -
 * `batch_dir` : the name of the directory containing the read pair files. There must be
   exactly two files per sample, named appropriately [`/dataC/CRDM/testingreads_gbs/191206_M02143`]
 * `out_dir`: the name of the output directory where data should go ["output"]
-* `strepA_DB` _or_ `strepB_DB` : the name of the database directory [`/dataC/CRDM/G[AB]_Reference_DB`]
+* `strepA_DB` _or_ `strepB_DB` _or_ `SPN_DB`: the name of the database directory [`/dataC/CRDM/G[AB]_Reference_DB`]
 
 
 
@@ -85,7 +97,10 @@ In addition there are two _Nextflow_ parameters that you can use (especially the
 
 
 
-# 3. Running the `GAS_Scripts_Reference` workflow
+# 3. Running the workflows
+
+
+## 3.1. `GAS_Scripts_Reference` workflow
 
 
 ```
@@ -111,13 +126,36 @@ You can run this from any directory. *If you are running on the Wits cluster ple
 
 This run above assumes that the database directory is in the default place. On the Wits cluster this is `/dataC/CRDM/GAS_Reference_DB`. If it is somehwere else use the `--strepA_DB` argument -- for example `--strepA_DB /home/scott/DBS/GAS_A`.
 
-# 4. Running the `GBS_Scripts_Reference` workflow
+## 3.2. Running the `GBS_Scripts_Reference` workflow
 
 
 
 ```
 
 nextflow run shaze/GS/strepB.nf  --batch_dir NAMEOFINPUTDIR --out_dir NAMEOFOUTPUTDIR --strepB_DB DBdirectory --max_forks  NUMBER
+                        
+
+```
+
+A typical run might be
+
+```
+
+nextflow run shaze/GS/strepB.nf  --batch_dir august_data --out_dir /dataC/archive/august -profile slurm
+                        
+
+```
+
+The same remarks as for `strepA` apply for the various parameters except that if the reference DB is not in the default place (`/dataC/CRDM/GBS_Reference_DB`) then use the `--strepB_DB` option. 
+
+
+## 3.3. Running the `SPN_Scripts_Reference` workflow
+
+
+
+```
+
+nextflow run shaze/GS/spn.nf  --batch_dir NAMEOFINPUTDIR --out_dir NAMEOFOUTPUTDIR --SPN_DB DBdirectory --max_forks  NUMBER
                         
 
 ```
