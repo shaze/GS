@@ -89,4 +89,5 @@ RUN apt-get -y autoremove  & /bin/rm -rf /root/*
 
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9  1
 
+RUN apt-get -y install clustalo=1.2.4-4build1 r-base-core=3.6.3-2 r-bioc-biostrings=2.54.0-1 r-cran-randomforest=4.6-14-2 r-cran-iterators=1.0.12-1 r-cran-foreach=1.4.8-1 r-cran-glmnet=3.0-2-1
      
