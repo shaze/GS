@@ -6,9 +6,6 @@ tabl_out=$3
 
 bin_out="BIN_Isolate_Typing_results.txt"
 
-printf "$base\t" >> "$tabl_out"
-printf "\tSerotype:\n" >> "$sampl_out"
-
 bin_out="BIN_Isolate_Typing_results.txt"
 printf "$base\t" >> "$tabl_out"
 printf "$base," >> "$bin_out"
@@ -53,7 +50,7 @@ printf "$sero_out\t$pili_out\t" >> "$tabl_out"
 printf "$sero_out,$pili_out\t" >> "$bin_out"
 
 ###MLST OUTPUT###
-sed 1d "$out_nameMLST"__mlst__Streptococcus_pneumoniae__results.txt | while read -r line
+sed 1d MLST_${base}__mlst__Streptococcus_pneumoniae__results.txt | while read -r line
 do
     MLST_tabl=$(echo "$line" | cut -f2-9)
     echo "MLST line: $MLST_tabl\n";
@@ -104,7 +101,7 @@ then
     #printf "$bLacCom," >> "$bin_out"
 else
     echo "One of the PBP types has an NF"
-    printf "NF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\t" >> "$tabl_out"
+    printf "NA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA" >> "$tabl_out"
     #printf "NF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF\tNF," >> "$bin_out"
 fi
 
@@ -120,7 +117,7 @@ done < RES-MIC_"$base"
 if [[ -e $(echo ./velvet_output/*_Logfile.txt) ]]
 then
     vel_metrics=$(echo ./velvet_output/*_Logfile.txt)
-    print "velvet metrics file: $vel_metrics\n";
+    echo "velvet metrics file: $vel_metrics\n";
     velvetMetrics.pl -i "$vel_metrics";
     line=$(cat velvet_qual_metrics.txt | tr ',' '\t')
     printf "$line\t" >> "$tabl_out"

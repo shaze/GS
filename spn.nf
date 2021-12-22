@@ -404,22 +404,22 @@ process reportSample {
 
 // low_coverage_ch = Channel.empty() // we may get from future impls of velvet
 
-// process reportGlobal {
-//   input: 
-//      file(reps) from reports.flatten().toList()
-//      file(newpbps) from newpbp_ch.toList()
-//      file(db)
-//      val low_cov from low_coverage_ch.mix (query_length_prob_ch).map { it[0]+"-"+it[1] }.ifEmpty("None").toList()
-//   output:
-//      file(rep_name)
-//   publishDir "${params.out_dir}", mode: 'copy', overwrite: true
-//   script:
-//       lc=(low_cov).join(",")
-//       rep_name="gas-"+new java.text.SimpleDateFormat("yyyy-MM-dd-HHmmss").format(new Date())+".xlsx"
-//       """
-//       combined_report_generic.py A $suffix ${params.batch_dir} ${params.out_dir}  \
-//                       $rep_name $lc
-//       echo $low_cov > see
-//       """
-// }
+process reportGlobal {
+   input: 
+      file(reps) from reports.flatten().toList()
+      file(newpbps) from newpbp_ch.toList()
+      file(db)
+       val low_cov from low_coverage_ch.mix (query_length_prob_ch).map { it[0]+"-"+it[1] }.ifEmpty("None").toList()
+    output:
+      file(rep_name)
+   publishDir "${params.out_dir}", mode: 'copy', overwrite: true
+   script:
+       lc=(low_cov).join(",")
+       rep_name="spn-"+new java.text.SimpleDateFormat("yyyy-MM-dd-HHmmss").format(new Date())+".xlsx"
+       """
+       combined_report_generic.py SPN $suffix ${params.batch_dir} ${params.out_dir}  \
+                       $rep_name $lc
+       echo $low_cov > see
+       """
+ }
 
