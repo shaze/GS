@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+
+//  (C) University of the Witwatersrand, Johannesburg 2021
+//  Scott Hazelhurst
+//  MIT License as specified in https://github.com/shaze/GS/blob/master/LICENSE.md
+
 import re
 import pandas as pd
 import glob

@@ -2,6 +2,11 @@
 
 
 
+//  (C) University of the Witwatersrand, Johannesburg 2021
+//  Scott Hazelhurst
+//  MIT License as specified in https://github.com/shaze/GS/blob/master/LICENSE.md
+
+
 max_forks = params.max_forks
 db_dir = params.strepB_DB
 

@@ -1,5 +1,10 @@
 #!/bin/bash -l
 
+
+//  (C) University of the Witwatersrand, Johannesburg 2021
+//  Scott Hazelhurst
+//  MIT License as specified in https://github.com/shaze/GS/blob/master/LICENSE.md
+
 params.max_forks=10
 max_forks = params.max_forks
 
