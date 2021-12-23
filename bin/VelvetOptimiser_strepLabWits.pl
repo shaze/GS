@@ -19,6 +19,8 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
+# Modfications made by Scott Hazelhurst 2021
+
 my $OptVersion = "2.2.5";
 
 #

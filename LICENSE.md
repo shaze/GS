@@ -1,9 +1,11 @@
-The code found in this repository comprises two parts
+The code found in this repository comprises several  parts
 
 * The bulk of the Perl and R code and some of the bash script comes the repos of Ben Metcalf (https://github.com/BenJamesMetcalf). No copyright notice appears on this code and the default position is that all rights are reserved on this code. I have forked and modified this code by consent as part of a collaborationto make the code portable. 
 
 
-This copyright notice applies only to the programs that are stored in this repo that explicitly incorporate this copyright notice. The rest are neither owned be me or nor copyrigthed by me and I do to purport to license their use.
+* The VelvetOptimiser code is (C) Simon Gladman released under a GPL v 2 licence as shown in the program
+
+* This copyright notice applies only to the programs that are stored in this repo that explicitly incorporate this copyright notice. The rest are neither owned be me or nor copyrigthed by me and I do to purport to license their use.
 
 (C) University of the Witwatersrand, Johannesburg, 2021
 Author Scott Hazelhurst
