@@ -7,6 +7,13 @@
 //  MIT License as specified in https://github.com/shaze/GS/blob/master/LICENSE.md
 
 
+if params.batch_dir == "0" {
+   println "No input batch directory was given"
+   System.exit(12);
+}
+
+
+
 max_forks = params.max_forks
 db_dir = params.strepB_DB
 

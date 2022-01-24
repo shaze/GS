@@ -8,8 +8,14 @@
 params.max_forks=10
 max_forks = params.max_forks
 
+if params.batch_dir == "0" {
+   println "No input batch directory was given"
+   System.exit(12);
+}
+
 params.out_dir = "spn_output"
-params.batch_dir="/dataC/CRDM/testingreads_spn/small/"
+
+
 params.spn_DB="/dataC/CRDM/SPN_Reference_DB"
 db_dir = params.spn_DB
 db = file(db_dir)

@@ -8,8 +8,14 @@
 params.max_forks=10
 max_forks = params.max_forks
 
+if (params.batch_dir == "0") {
+   println "No input batch directory was given"
+   System.exit(12);
+}
+
+   
 params.out_dir = "gas_output"
-params.batch_dir="/dataC/CRDM/gas_test_small/"
+
 staged_batch_dir = file (params.batch_dir)
 params.strepA_DB="/dataC/CRDM/GAS_Reference_DB"
 db_dir = params.strepA_DB
