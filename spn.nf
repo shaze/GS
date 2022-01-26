@@ -8,7 +8,7 @@
 params.max_forks=10
 max_forks = params.max_forks
 
-if params.batch_dir == "0" {
+if (params.batch_dir == "0") {
    println "No input batch directory was given"
    System.exit(12);
 }
