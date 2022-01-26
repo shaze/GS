@@ -339,17 +339,21 @@ foreach (@query_names) {
     my $match_iden = $identity * 100;
 
     print "\nprodigal gene name of best hit against the query sequence: $best_name\n";
-    print "% identity of best hit against the query sequence: $best_iden\n";
+    print "% identity of best hit against the query sequence: $best_iden versus $match_iden\n";
     print "length of best hit against the query sequence: $best_len\n";
     print "match length threshold: $match_len\n";
 
+
+    
     if ($best_iden >= $match_iden && $best_len >= $match_len) {
 	#my $prodigal_fna = `extractFastaByID.pl $best_name < prodigal_"$outName".fna`;
 	#my $prodigal_faa = `extractFastaByID.pl $best_name < prodigal_"$outName".faa`;
+	print "A\n";
 	my $prodigal_fna = extractFastaByID($best_name,"prodigal_$outName.fna");
 	my $prodigal_faa = extractFastaByID($best_name,"prodigal_$outName.faa");
 	print $exOUT "$prodigal_fna\n$prodigal_faa\n\n";
     } else {
+	print "B\n";	
 	open ( my $errOUT, ">>", $error_out ) or die "Could not open file $error_out: $!";
 	print $errOUT "Gene Extraction: The best blast hit ($best_name) for $query_name didn't meet minimum criteria of length and identity to call a true match\n\n";
 	close $errOUT;
@@ -384,6 +388,7 @@ foreach (@query_names) {
 		#my $frag_start = $bestArray[8] - 1;
 		my $blast_endDiff = $query_length - $bestArray[7];
 	        my $frag_start = $bestArray[8] - $bestArray[6];
+		if ($frag_start<0) { $frag_start=0 }
 		my $frag_end = $blast_endDiff + $bestArray[9];
 		open(my $fh, '>', 'TEMP_frwd_extract.bed') or die "Could not open file 'TEMP_frwd_extract.bed' $!";
 		print $fh "$best_name\t$frag_start\t$frag_end\n";
@@ -402,6 +407,7 @@ foreach (@query_names) {
 		my $blast_endDiff = $query_length - $bestArray[7];
 		my $frag_start = $bestArray[8] + $bestArray[6] - 1;
 		my $frag_end = $bestArray[9] - $blast_endDiff - 1;
+		if ($frag_end<0) { $frag_end=0 }
 		open(my $fh, '>', 'TEMP_rev_extract.bed');
 		print $fh "$best_name\t$frag_end\t$frag_start\n";
 		close $fh;
