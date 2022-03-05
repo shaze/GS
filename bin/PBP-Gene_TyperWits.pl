@@ -156,6 +156,7 @@ sub PBP_blastTyper {
     }
     my ($query_hedr, $query_aaSeq) = sixFrame_Translate($query_seq,1);
     `printf ">$query_hedr\n$query_aaSeq\n" > TEMP_query_sequence.faa`;
+    `printf ">$query_hedr\n$query_aaSeq\n" > T_${pbp_type}_TEMP_query_sequence.faa`;    
     my $query_length = fasta_seq_length($query_aaSeq);
 
     my $db_path = dirname($PBP_DB);
@@ -169,7 +170,8 @@ sub PBP_blastTyper {
 	system("blastp -db $db_path/$blastDB_name -query TEMP_query_sequence.faa -outfmt 6 -out $blast_out");
     } else {
 	print "Blast database has already been created\n";
-        system("blastp -db $db_path/$blastDB_name -query TEMP_query_sequence.faa -outfmt 6 -out $blast_out");
+	print  "blastp -db $db_path/$blastDB_name -query TEMP_query_sequence.faa -outfmt 6 -out $blast_out\n";
+        system("blastp -db $db_path/$blastDB_name -query TEMP_query_sequence.faa -outfmt 6 -out $blast_out; which blastp; echo $?;  echo XX");
     }
 
     my $bestHit = `cat $blast_out | sort -k12,12 -nr -k3,3 -k4,4 | head -n 1`;
@@ -180,6 +182,7 @@ sub PBP_blastTyper {
     my $best_iden = $bestArray[2];
     my $frag_length = $best_len / $query_length;
 
+    print "query_length: $query_length\n";
     print "name of best hit in the PBP database: $bestArray[1]\n";
     print "identity of best hit in the PBP database: $bestArray[2]\n";
     print "length of best hit in the PBP database: $bestArray[3]\n";
@@ -324,6 +327,9 @@ sub fasta_seq_length {
     foreach my $line (@lines) {
     #while (my $line = <$q_seq>) {
         chomp($line);
+	my $ll=length($line);
+	print "$line $ll\n";
+	
         if ($line =~ /^>/) {
             next;
         } else {

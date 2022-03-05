@@ -28,7 +28,8 @@ for i, t in enumerate(table_data):
     # makes assumptions about the input format
 
 table = pd.DataFrame(table_data,columns=table_heads)
-
+table.sort_values(by=['Sample'],inplace=True)
+print(table.head(10))
 
 bins = glob.glob("*_BIN_*")
 bin_data=[f.readline().split(",") for f in map(open, bins)]

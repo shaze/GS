@@ -27,6 +27,7 @@ while(<MYINPUTFILE>) {
     #print "$line\n";
     my @res_arr;
     @res_arr = split('\t',$line);
+    $res_arr[1] =~ s/,/:/g;
     $Res_hash{$res_arr[0]} = $res_arr[1];
 }
 close MYINPUTFILE;

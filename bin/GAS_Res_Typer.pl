@@ -272,6 +272,7 @@ sub extractFastaByID {
 sub freebayes_prior_fix {
     my ($bamFile, $refFile, $target) = @_;
     (my $samFile = $bamFile) =~ s/\.bam/\.sam/g;
+    print "samtools view -h $bamFile > $samFile";
     system("samtools view -h $bamFile > $samFile");
     system("cat $samFile | grep -E \"^\@HD|^\@SQ.*$target|^\@PG\" > CHECK_target_seq.sam");
     system("awk -F'\t' '\$3 == \"$target\" {print \$0}' $samFile >> CHECK_target_seq.sam");
@@ -317,11 +318,22 @@ system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $outNam
 print("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $out_nameARG --log --save_scores --min_coverage 70 --max_divergence 30 --gene_db $ref_dir/ARGannot_r1.fasta");
 system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $out_nameARG --log --save_scores --min_coverage 70 --max_divergence 30 --gene_db $ref_dir/ARGannot_r1.fasta");
 ###Type ResFinder Resistance Gene###
+print "srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $out_nameRESFI --log --save_scores --min_coverage 70 --max_divergence 30 --gene_db $ref_dir/ResFinder.fasta\n";
 system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $out_nameRESFI --log --save_scores --min_coverage 70 --max_divergence 30 --gene_db $ref_dir/ResFinder.fasta");
+
 #=cut
 
 my @TEMP_RES_bam = glob("RES_*\.sorted\.bam");
+if ((scalar @TEMP_RES_bam)==0) {
+    @TEMP_RES_bam = ("TEMP_RES_fullgene_empty");
+    system("touch TEMP_RES_bam");
+}
 my @TEMP_RES_fullgene = glob("RES_*__fullgenes__*__results\.txt");
+if ((scalar @TEMP_RES_fullgene)==0) {
+    @TEMP_RES_fullgene = ("TEMP_RES_fullgene_empty");
+    system("touch TEMP_RES_fullgene_empty");
+}
+	
 my $RES_bam = $TEMP_RES_bam[0];
 my $RES_full_name = $TEMP_RES_fullgene[0];
 print "res bam is: $RES_bam || res full gene $RES_full_name\n";
@@ -329,13 +341,27 @@ print "res bam is: $RES_bam || res full gene $RES_full_name\n";
 (my $RES_bai = $RES_bam) =~ s/\.bam/\.bai/g;
 
 my @TEMP_ARG_fullgene = glob("ARG_*__fullgenes__*__results\.txt");
+if ((scalar @TEMP_ARG_fullgene)==0) {
+    @TEMP_ARG_fullgene = ("TEMP_ARG_fullgene_empty");
+    system("touch TEMP_ARG_fullgene_empty");
+}
 my $ARG_full_name = $TEMP_ARG_fullgene[0];
 my @TEMP_RESFI_fullgene = glob("RESFI_*__fullgenes__*__results\.txt");
+if ((scalar @TEMP_RESFI_fullgene)==0) {
+    @TEMP_RESFI_fullgene = ("TEMP_RESFI_fullgene_empty");
+    system("touch TEMP_RESFI_fullgene_empty");
+}
 my $RESFI_full_name = $TEMP_RESFI_fullgene[0];
+print $RESFI_full_name;
+
+
 my $merged_net = "ARG-RESFI_fullgenes_results.txt";
 #copy $ARG_full_name, $merged_net;
+print "tail -n+2 $ARG_full_name > $merged_net\n";
 system("tail -n+2 $ARG_full_name > $merged_net");
+print "tail -n+2 $RESFI_full_name >> $merged_net\n";
 system("tail -n+2 $RESFI_full_name >> $merged_net");
+print "Ready to go\n\n";
 
 my %drugRes_Col = (
     "ER_CL" => "neg",
@@ -370,7 +396,7 @@ while(<MYINPUTFILE>) {
     next if $. < 2;
     my $line = $_;
     chomp($line);
-    #print "$line\n";
+    print "************ $line\n";
     my @miscR_fullgene;
     @miscR_fullgene = split('\t',$line);
     if ($miscR_fullgene[5] >= 10) {
@@ -667,7 +693,9 @@ my $REF_seq = extractFastaByID("7__FOLA__FOLA-1__7","$res_DB");
 `echo "$REF_seq" > TEMP_FOLA_Ref.fna`;
 #module "unload perl/5.22.1";
 #module "load perl/5.16.1-MT";
+print "LoTrac_target.pl -1 $fastq1 -2 $fastq2 -q TEMP_FOLA_Ref.fna -S 2.2M -f -n $outName -o $outDir\n";
 system("LoTrac_target.pl -1 $fastq1 -2 $fastq2 -q TEMP_FOLA_Ref.fna -S 2.2M -f -n $outName -o $outDir");
+print "Finished LoTrac\n\n";
 #module "unload perl/5.16.1-MT";
 #module "load perl/5.22.1";
 my $FOLA_file = glob("EXTRACT_*FOLA*.fasta");

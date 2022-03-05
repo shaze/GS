@@ -83,13 +83,13 @@ process cutAdapt1 {
   cpus 4
   errorStrategy 'finish'
   input:
-   set val(base), file(pair) from fqPairs1
+   set val(base), file(r1), file(r2) from fqPairs1
   output:
    set val(base), file("temp1.fastq"), file("temp2.fastq") into trim1_ch
   script:
    """
      cutadapt --cores 4 -b $adapter1 -q 20 --minimum-length 50 \
-         --paired-output temp2.fastq -o temp1.fastq $pair
+         --paired-output temp2.fastq -o temp1.fastq $r2 $r1
    """
 }
 

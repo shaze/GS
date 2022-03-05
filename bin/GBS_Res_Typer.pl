@@ -274,7 +274,6 @@ sub freebayes_prior_fix {
     (my $samFile = $bamFile) =~ s/\.bam/\.sam/g;
     print "Calling samtools view -h $bamFile > $samFile\n";
     system("samtools view -h $bamFile > $samFile");
-    print "*******   About to grep\n ";
     system("cat $samFile | grep -E \"^\@HD|^\@SQ.*$target|^\@PG\" > CHECK_target_seq.sam");
     print "******* awk -F'\t' '\$3 == \"$target\" {print \$0}' $samFile >> CHECK_target_seq.sam\n";
     system("awk -F'\t' '\$3 == \"$target\" {print \$0}' $samFile >> CHECK_target_seq.sam");
@@ -326,7 +325,18 @@ system("srst2 --samtools_args '\\-A' --input_pe $fastq1 $fastq2 --output $out_na
 #=cut
 
 my @TEMP_RES_bam = glob("RES_*\.sorted\.bam");
+if ((scalar @TEMP_RES_bam)==0) {
+    @TEMP_RES_bam = ("TEMP_RES_fullgene_empty");
+    system("touch TEMP_RES_bam");
+}
+
 my @TEMP_RES_fullgene = glob("RES_*__fullgenes__*__results\.txt");
+if ((scalar @TEMP_RES_fullgene)==0) {
+    @TEMP_RES_fullgene = ("TEMP_RES_fullgene_empty");
+    system("touch TEMP_RES_fullgene_empty");
+}
+
+
 my $RES_bam = $TEMP_RES_bam[0];
 my $RES_full_name = $TEMP_RES_fullgene[0];
 print "res bam is: $RES_bam || res full gene $RES_full_name\n";
@@ -334,8 +344,18 @@ print "res bam is: $RES_bam || res full gene $RES_full_name\n";
 (my $RES_bai = $RES_bam) =~ s/\.bam/\.bai/g;
 
 my @TEMP_ARG_fullgene = glob("ARG_*__fullgenes__*__results\.txt");
+if ((scalar @TEMP_ARG_fullgene)==0) {
+    @TEMP_ARG_fullgene = ("TEMP_ARG_fullgene_empty");
+    system("touch TEMP_ARG_fullgene_empty");
+}
+
 my $ARG_full_name = $TEMP_ARG_fullgene[0];
 my @TEMP_RESFI_fullgene = glob("RESFI_*__fullgenes__*__results\.txt");
+
+if ((scalar @TEMP_RESFI_fullgene)==0) {
+    @TEMP_RESFI_fullgene = ("TEMP_RESFI_fullgene_empty");
+    system("touch TEMP_RESFI_fullgene_empty");
+}
 my $RESFI_full_name = $TEMP_RESFI_fullgene[0];
 my $merged_net = "ARG-RESFI_fullgenes_results.txt";
 #copy $ARG_full_name, $merged_net;

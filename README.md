@@ -96,6 +96,14 @@ In addition there are two _Nextflow_ parameters that you can use (especially the
 * `-resume`: if something crashed in a run for a reason other than an error in the workflow (say the computer's power went down) then you can use this to pick up execution from the point that execution failed (obviously if there's a bug in the workflow or a problem with the data the workflow will just crash again)
 
 
+## 2.3 Software versions
+
+The pipeline has many software dependancies. The normal behaviour is to look for these programs using your normal setup (or if you use singularity/docker) in the versions we provide. On the Wits cluster we provide an option to mimic the software versions used at the CDC. It's not a perfect match but seems to work.
+
+In order to use this _legacy_ version add `-profile legacy` to your run. If you are using another option like slurm you can say `-profile slurm,legacy`
+
+
+
 
 # 3. Running the workflows
 

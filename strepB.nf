@@ -13,9 +13,19 @@ if (params.batch_dir == "0") {
 }
 
 
+params.cutadapt_cores=4
 
+
+if (workflow.profile.contains("legacy")) {
+  cutadapt_core_option = " "
+} else {
+   cutadapt_core_option = " --cores ${params.cutadapt_cores}"
+}
+
+
+   
 max_forks = params.max_forks
-db_dir = params.strepB_DB
+db_dir    = params.strepB_DB
 
 db=file(db_dir)
 
@@ -45,7 +55,9 @@ process cutAdapt1 {
    set val(base), file("temp1.fastq"), file("temp2.fastq") into trim1_ch
   script:
    """
-     cutadapt --cores 4 -b AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -q 20 --minimum-length 50 --paired-output temp2.fastq -o temp1.fastq $pair
+     cutadapt $cutadapt_core_option -b AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC \
+              -q 20 --minimum-length 50 --paired-output temp2.fastq \
+              -o temp1.fastq $pair
    """
 }
 
@@ -60,7 +72,9 @@ process cutAdapt2 {
    trim1="cutadapt_${base}_R1_001.fastq"
    trim2="cutadapt_${base}_R2_001.fastq"
    """
-   cutadapt --cores 4 -b AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT -q 20 --minimum-length 50 --paired-output $trim1 -o $trim2  $r1 $r2
+   cutadapt $cutadapt_core_option \
+       -b AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT \
+       -q 20 --minimum-length 50 --paired-output $trim1 -o $trim2  $r2 $r1
    """
 }
 
@@ -145,7 +159,7 @@ process getVelvetK {
   output:
     tuple(base), stdout into velvet_k_ch
   """
-     velvetk.pl --best --size 1.8M  $f1 $f2
+     velvetk.pl --best --size 2.2M  $f1 $f2
   """
 }
 

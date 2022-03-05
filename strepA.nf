@@ -17,10 +17,20 @@ if (params.batch_dir == "0") {
 params.out_dir = "gas_output"
 
 staged_batch_dir = file (params.batch_dir)
-params.strepA_DB="/dataC/CRDM/GAS_Reference_DB"
+params.strepA_DB="/dataC/CRDM/GAS_eference_DB"
 db_dir = params.strepA_DB
 suffix=params.suffix
 
+
+params.cutadapt_cores=4
+
+println workflow.profile
+
+if (workflow.profile.contains("legacy")) {
+  cores  = " "
+} else {
+  cores = " --cores ${params.cutadapt_cores}"
+}
 
 
 
@@ -55,17 +65,19 @@ process makeBowtieIndices {
     file f from bowtie_sources
     output:
       file("$f.*") into bowtie_indices
+      file("sync") into bowtie_sync
     storeDir db_dir
     script:
     """
     bowtie2-build $f $f
+    touch sync
     """
 }
 
 process makeBlastDBprimer {
     input:
       file(primer_db)
-      file(x) from bowtie_indices.toList() // this is just a hack to have a barrier
+      file(bowtie_sync) // this is just a hack to have a barrier
     output:
      file("${bl_out}*") into blast_db_ch
      //storeDir db_dir
@@ -97,7 +109,7 @@ process makeBlactamDB {
     file(db)
   each pbp_type from pbp_types
   output:
-    file("$db/${blastDB_name}*pto") into blast_blactam_ch
+    file("$db/${blastDB_name}*p*") into blast_blactam_ch
   storeDir db_dir  
   script:
     blastDB_name = "Blast_bLactam_${pbp_type}_prot_DB"
@@ -109,7 +121,7 @@ process makeBlactamDB {
 
 process cutAdapt1 {
   maxForks max_forks
-  cpus 4
+  cpus params.cutadapt_cores
   errorStrategy 'finish'
   input:
    set val(base), file(pair) from fqPairs1
@@ -117,13 +129,14 @@ process cutAdapt1 {
    set val(base), file("temp1.fastq"), file("temp2.fastq") into trim1_ch
   script:
    """
-     cutadapt --cores 4 -b $adapter1 -q 20 --minimum-length 50 \
+     cutadapt  $cores  -b $adapter1 -q 20 --minimum-length 50 \
          --paired-output temp2.fastq -o temp1.fastq $pair
    """
 }
 
 process cutAdapt2 {
-   errorStrategy 'finish'
+  errorStrategy 'finish'
+  cpus params.cutadapt_cores  
   input:
    set val(base), file(r1), file(r2) from trim1_ch
   output:
@@ -133,13 +146,10 @@ process cutAdapt2 {
    trim1="cutadapt_${base}_R1_001.fastq"
    trim2="cutadapt_${base}_R2_001.fastq"
    """
-   cutadapt --cores 4 -b $adapter2 -q 20 --minimum-length 50 \
-             --paired-output $trim1 -o $trim2  $r1 $r2
+   cutadapt $cores -b $adapter2 -q 20 --minimum-length 50 \
+             --paired-output $trim1 -o $trim2  $r2 $r1
    """
 }
-
-
-
 
 // No point in splitting since this is cheap compared to the rest
 process fastQC {
@@ -206,7 +216,8 @@ process getVelvetK {
   output:
     tuple(base), stdout into velvet_k_ch
   """
-     velvetk.pl --best --size 1.8M  $f1 $f2
+     velvetk.pl --best --size 1.8M  $f1 $f2 > Kval
+     cat Kval
   """
 }
 
@@ -223,15 +234,18 @@ process velvet {
   """
    hostname
    export OMP_NUM_THREADS=${params.max_velvet_cpus}
+   echo $k > Kval
    VelvetOptimiser.pl -s $k -e $k -o "-scaffolding no" \
                     -f "-shortPaired -separate -fastq $f1 $f2" -d velvet_output;
   """
 }
 
+
+																																												
 process blast {
   input:
     tuple val(base), file(contig), \
-  	  file(bl1), file(bl2), file(bl3), file(bl4), file(bl5), file(bl6), file(bl7) \
+          file(bl1), file(bl2), file(bl3)\
 	  from velvet_bl_ch.combine(blast_db_ch)
   output:
   tuple val(base), file(res) into blast_ch
@@ -264,6 +278,7 @@ fqPairs4.join(trimmed_ch4)
 
 
 process LoTrac {
+   errorStrategy 'finish'
    input:
       set val(base),  file(raw1), file(raw2), file(trim1), file(trim2),\
           file(velvet_output)  from pbp_inputs_ch.join(velvet_lo_ch)
@@ -272,7 +287,8 @@ process LoTrac {
       tuple val(base), file("*fasta") optional true into lotrac_output_ch
       tuple val(base), val("query_seq_bad"), file("BAD_SEQ") optional true into query_length_prob_ch    
    script:
-   """     
+   """    
+   printenv PATH 
    LoTrac_target.pl -1 $raw1 -2 $raw2 -q $db/GAS_bLactam_Ref.fasta \
                      -S 2.2M -L 0.95 -f -n $base -o ./
    """
@@ -386,6 +402,10 @@ process reportSample {
 low_coverage_ch = Channel.empty() // we may get from future impls of velvet
 
 process reportGlobal {
+  if (System.getenv("SHELL") == "/bin/zsh") {
+    beforeScript 'source /usr/share/Modules/init/zsh'
+  }
+  module 'python/3.9'
   input: 
      file(reps) from reports.flatten().toList()
      file(newpbps) from newpbp_ch.toList()
@@ -398,6 +418,7 @@ process reportGlobal {
       lc=(low_cov).join(",")
       rep_name="gas-"+new java.text.SimpleDateFormat("yyyy-MM-dd-HHmmss").format(new Date())+".xlsx"
       """
+      python3 --version  
       combined_report_generic.py A $suffix ${params.batch_dir} ${params.out_dir}  \
                       $rep_name $lc
       echo $low_cov > see
@@ -408,14 +429,29 @@ process reportGlobal {
 process multiqc {
     input:
     file ('fastqc/*') from fastqc_results_ch.collect().ifEmpty([])
-
     output:
     file "multiqc_report.html" into multiqc_report
     file "multiqc_data"
     publishDir "${params.out_dir}", mode: 'copy', overwrite: true
     script:
     """
+    export PATH=/opt/exp_soft/python39/bin/:${PATH}
     multiqc .
     """
 }
 
+process versions {
+    publishDir "${params.out_dir}", mode: 'copy', overwrite: true
+    script:
+      file("software_version.txt")
+      """
+      echo cutadapt `cutadapt --version` > software_version.txt
+      blastn -version   >> software_version.txt
+      echo velvet `velvetg | tail -n+2 | head -n1 `  >> software_version.txt
+      srst2 --version   >> software_version.txt
+      echo freebayes `freebayes --version`   >> software_version.txt
+      prodigal -v   >> software_version.txt
+      bowtie2 --version | head -n 1   >> software_version.txt
+      samtools |& head -n 3   >> software_version.txt
+      """
+}

@@ -56,7 +56,7 @@ print STDERR "Desire k-mer coverage of $cov\n" if $best;
 
 my %num_with_len;
 my $dna;
-for my $file (@ARGV) { 
+for my $file (@ARGV) {
   my $nseq=0; 
   my $fh = open_maybe_compressed($file);
   while (my $line = $fh->getline) {
