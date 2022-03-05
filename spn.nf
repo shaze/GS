@@ -105,7 +105,7 @@ process cutAdapt2 {
    trim2="cutadapt_${base}_R2_001.fastq"
    """
    cutadapt --cores 4 -b $adapter2 -q 20 --minimum-length 50 \
-             --paired-output $trim1 -o $trim2  $r1 $r2
+             --paired-output $trim1 -o $trim2  $r2 $r1
    """
 }
 
