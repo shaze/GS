@@ -16,6 +16,17 @@ if (params.batch_dir == "0") {
 params.out_dir = "spn_output"
 
 
+params.cutadapt_cores=4
+
+println workflow.profile
+
+if (workflow.profile.contains("legacy")) {
+  cores  = " "
+} else {
+  cores = " --cores ${params.cutadapt_cores}"
+}
+
+
 params.spn_DB="/dataC/CRDM/SPN_Reference_DB"
 db_dir = params.spn_DB
 db = file(db_dir)
@@ -60,6 +71,7 @@ Channel.fromFilePairs("${params.batch_dir}/*_R{1,2}_001.fastq.gz").
 // }
 
 
+
 pbp_types = ["1A","2B","2X"]
 
 process makeBlastBlactam {
@@ -80,7 +92,7 @@ process makeBlastBlactam {
 
 process cutAdapt1 {
   maxForks max_forks
-  cpus 4
+  cpus params.cutadapt_cores
   errorStrategy 'finish'
   input:
    set val(base), file(r1), file(r2) from fqPairs1
@@ -88,13 +100,14 @@ process cutAdapt1 {
    set val(base), file("temp1.fastq"), file("temp2.fastq") into trim1_ch
   script:
    """
-     cutadapt --cores 4 -b $adapter1 -q 20 --minimum-length 50 \
+     cutadapt $cores -b $adapter1 -q 20 --minimum-length 50 \
          --paired-output temp2.fastq -o temp1.fastq $r2 $r1
    """
 }
 
 process cutAdapt2 {
-   errorStrategy 'finish'
+  errorStrategy 'finish'
+  cpus params.cutadapt_cores    
   input:
    set val(base), file(r1), file(r2) from trim1_ch
   output:
@@ -104,7 +117,7 @@ process cutAdapt2 {
    trim1="cutadapt_${base}_R1_001.fastq"
    trim2="cutadapt_${base}_R2_001.fastq"
    """
-   cutadapt --cores 4 -b $adapter2 -q 20 --minimum-length 50 \
+   cutadapt $cores -b $adapter2 -q 20 --minimum-length 50 \
              --paired-output $trim1 -o $trim2  $r2 $r1
    """
 }
