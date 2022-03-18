@@ -50,7 +50,7 @@ ref3=file("${db_dir}/newDB/Ref_PBP_3.faa")
 
 Channel.fromFilePairs("${params.batch_dir}/*_R{1,2}_001.fastq.gz").
       ifEmpty { println "No files  match pattern: ${params.batch_dir}/*_R{1,2}_001.fastq.gz";
-                System.exit(10) }.
+                System.exit(10) }.map { it -> [it[0], it[1][0], it[1][1] }  
 		    into { fqPairs1; fqPairs2; fqPairs3; fqPairs4; fqPairs5; fqPairs6 }
 
 
