@@ -50,7 +50,7 @@ ref3=file("${db_dir}/newDB/Ref_PBP_3.faa")
 
 Channel.fromFilePairs("${params.batch_dir}/*_R{1,2}_001.fastq.gz").
       ifEmpty { println "No files  match pattern: ${params.batch_dir}/*_R{1,2}_001.fastq.gz";
-                System.exit(10) }.map { it -> [it[0], it[1][0], it[1][1]] }.  
+                System.exit(10) }.
 		    into { fqPairs1; fqPairs2; fqPairs3; fqPairs4; fqPairs5; fqPairs6 }
 
 
@@ -95,10 +95,12 @@ process cutAdapt1 {
   cpus params.cutadapt_cores
   errorStrategy 'finish'
   input:
-   set val(base), file(r1), file(r2) from fqPairs1
+   set val(base), file(pair) from fqPairs1
   output:
    set val(base), file("temp1.fastq"), file("temp2.fastq") into trim1_ch
-  script:
+   script:
+   r1=pair[0]
+   r2=pair[1]
    """
      cutadapt $cores -b $adapter1 -q 20 --minimum-length 50 \
          --paired-output temp2.fastq -o temp1.fastq $r2 $r1
