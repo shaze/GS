@@ -227,7 +227,7 @@ process velvet {
   input:
     tuple val(base), file(f1), file(f2), val(vk) from trimmed_ch3.join(velvet_k_ch)
   output:
-  tuple val(base), file(velvet_output) into \
+  tuple val(base), file("velvet_output") into \
 	velvet_bl_ch, velvet_lo_ch, velvet_emm_ch, velvet_gsres_ch, velvet_report_ch
   script:
      k = vk.trim()
@@ -244,7 +244,7 @@ process velvet {
 																																												
 process blast {
   input:
-    tuple val(base), file(contig), \
+    tuple val(base), file(velvet_output), \
           file(bl1), file(bl2), file(bl3)\
 	  from velvet_bl_ch.combine(blast_db_ch)
   output:
