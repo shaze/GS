@@ -17,9 +17,16 @@ if (params.batch_dir == "0") {
 params.out_dir = "gas_output"
 
 staged_batch_dir = file (params.batch_dir)
-params.strepA_DB="/dataC/CRDM/GAS_eference_DB"
+params.strepA_DB="/dataC/CRDM/GAS_Reference_DB"
 db_dir = params.strepA_DB
+
+bl_out="blast_frwd_primr-nucl_DB"
+nhr=file("${db_dir}/${bl_out}.nhr")
+nin=file("${db_dir}/${bl_out}.nin")
+nsq=file("${db_dir}/${bl_out}.nsq")
+
 suffix=params.suffix
+
 
 
 params.cutadapt_cores=4
@@ -35,6 +42,9 @@ if (workflow.profile.contains("legacy")) {
 
 
 db=file(db_dir)
+
+
+
 
 strep_pyog=file("$db_dir/Streptococcus_pyogenes.fasta")
 strep_pyog_txt=file("$db_dir/spyogenes.txt")
@@ -79,10 +89,12 @@ process makeBlastDBprimer {
       file(primer_db)
       file(bowtie_sync) // this is just a hack to have a barrier
     output:
-     file("${bl_out}*") into blast_db_ch
-     //storeDir db_dir
+      file("${bl_out}.nhr")
+      file("${bl_out}.nin")
+      file("${bl_out}.nsq")        
+    storeDir db_dir
+      
     script:
-       bl_out="blast_frwd_primr-nucl_DB"
      """
      makeblastdb -in $primer_db -dbtype nucl -out $bl_out
      """
@@ -243,15 +255,20 @@ process velvet {
 
 																																												
 process blast {
+    memory '4.GB'
+    maxForks max_forks
   input:
-    tuple val(base), file(velvet_output), \
-          file(bl1), file(bl2), file(bl3)\
-	  from velvet_bl_ch.combine(blast_db_ch)
+     tuple val(base), file(velvet_output) from velvet_bl_ch
+     file(nhr)
+     file(nin)
+     file(nsq)
   output:
   tuple val(base), file(res) into blast_ch
   script:
     res="contig-vs-frwd_nucl.txt"
     """
+     sleep 1
+     ls 
      blastn -db blast_frwd_primr-nucl_DB -query velvet_output/contigs.fa -outfmt 6 -word_size 4 \
           -out $res
      """
