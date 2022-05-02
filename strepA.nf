@@ -208,6 +208,7 @@ process MLSTalleleChecker {
    output:
       stdout ch
       file ("${base}_new_mlst.txt") optional true into new_mlst_ch
+   publishDir "${params.out_dir}/new_mlst/", mode:params.publish, overwrite:true
    errorStrategy 'finish'
    script:
    """
@@ -241,8 +242,9 @@ process velvet {
   output:
   tuple val(base), file("velvet_output") into \
 	velvet_bl_ch, velvet_lo_ch, velvet_emm_ch, velvet_gsres_ch, velvet_report_ch
+  publishDir "${params.out_dir}/${base}/", mode: params.publish, overwrite: true, pattern: "velvet_output"
   script:
-     k = vk.trim()
+  k = vk.trim()
   """
    hostname
    export OMP_NUM_THREADS=${params.max_velvet_cpus}
