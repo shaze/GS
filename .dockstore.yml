@@ -10,7 +10,7 @@ workflows:
      publish: True
    - subclass: NFL
      primaryDescriptorPath: /strepB.nf
-     name: strepA-nf
+     name: strepB-nf
      authors:
       - name: Scott Hazelhurst
         email: scott.hazelhurst@wits.ac.za
@@ -18,7 +18,7 @@ workflows:
      publish: True
    - subclass: NFL
      primaryDescriptorPath: /spn.nf
-     name: strepA-nf
+     name: spn-nf
      authors:
       - name: Scott Hazelhurst
         email: scott.hazelhurst@wits.ac.za
