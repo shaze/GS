@@ -6,7 +6,7 @@ workflows:
      authors:
       - name: Scott Hazelhurst
         email: scott.hazelhurst@wits.ac.za
-	orcid: 0000-0002-0581-149X 
+        orcid: 0000-0002-0581-149X 
      publish: True
    - subclass: NFL
      primaryDescriptorPath: /strepB.nf
@@ -14,7 +14,7 @@ workflows:
      authors:
       - name: Scott Hazelhurst
         email: scott.hazelhurst@wits.ac.za
-	orcid: 0000-0002-0581-149X 
+        orcid: 0000-0002-0581-149X 
      publish: True
    - subclass: NFL
      primaryDescriptorPath: /spn.nf
@@ -22,5 +22,5 @@ workflows:
      authors:
       - name: Scott Hazelhurst
         email: scott.hazelhurst@wits.ac.za
-	orcid: 0000-0002-0581-149X 
+        orcid: 0000-0002-0581-149X 
      publish: True
