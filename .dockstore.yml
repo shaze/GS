@@ -1,0 +1,26 @@
+version: 1.0
+workflows:
+   - subclass: NFL
+     primaryDescriptorPath: /strepA.nf
+     name: strepA-nf
+     authors:
+      - name: Scott Hazelhurst
+        email: scott.hazelhurst@wits.ac.za
+	orcid: 0000-0002-0581-149X 
+     publish: True
+   - subclass: NFL
+     primaryDescriptorPath: /strepB.nf
+     name: strepA-nf
+     authors:
+      - name: Scott Hazelhurst
+        email: scott.hazelhurst@wits.ac.za
+	orcid: 0000-0002-0581-149X 
+     publish: True
+   - subclass: NFL
+     primaryDescriptorPath: /spn.nf
+     name: strepA-nf
+     authors:
+      - name: Scott Hazelhurst
+        email: scott.hazelhurst@wits.ac.za
+	orcid: 0000-0002-0581-149X 
+     publish: True

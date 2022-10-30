@@ -5,6 +5,7 @@
 //  Scott Hazelhurst
 //  MIT License as specified in https://github.com/shaze/GS/blob/master/LICENSE.md
 
+nextflow.enable.dsl=1
 params.max_forks=10
 max_forks = params.max_forks
 
