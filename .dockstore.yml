@@ -1,7 +1,7 @@
 version: 1.2
 workflows:
    - subclass: NFL
-     primaryDescriptorPath: /strepA.nf
+     primaryDescriptorPath: /strepA.config
      name: strepA-nf
      authors:
       - name: Scott Hazelhurst
@@ -9,7 +9,7 @@ workflows:
         orcid: 0000-0002-0581-149X 
      publish: True
    - subclass: NFL
-     primaryDescriptorPath: /strepB.nf
+     primaryDescriptorPath: /strepB.config
      name: strepB-nf
      authors:
       - name: Scott Hazelhurst
@@ -17,7 +17,7 @@ workflows:
         orcid: 0000-0002-0581-149X 
      publish: True
    - subclass: NFL
-     primaryDescriptorPath: /spn.nf
+     primaryDescriptorPath: /spn.config
      name: spn-nf
      authors:
       - name: Scott Hazelhurst
