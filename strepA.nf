@@ -382,6 +382,7 @@ process gsFeatureTyper {
        into surface_res_ch
   script:
   """
+   hostname
    $g_sf_typer -1 ${pair[0]} -2 ${pair[1]} -d $db $g_sf_typer_parm -n $base
   """
 }
@@ -425,7 +426,6 @@ process reportGlobal {
   if (System.getenv("SHELL") == "/bin/zsh") {
     beforeScript 'source /usr/share/Modules/init/zsh'
   }
-  module 'python/3.9'
   input: 
      file(reps) from reports.flatten().toList()
      file(newpbps) from newpbp_ch.toList()
